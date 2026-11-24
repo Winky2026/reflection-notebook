@@ -18,6 +18,10 @@ dialog{border:0;border-radius:16px;padding:0;background:white;color:var(--ink);w
 @media(max-width:720px){.wrap{width:calc(100% - 32px)}.top{height:61px}main{padding-top:16px}.hero{min-height:143px;padding:20px 17px;align-items:flex-start;flex-direction:column;gap:12px}.hero h1{font-size:2.02rem;margin-bottom:5px}.hero p{font-size:.875rem;max-width:245px}.orbit{width:183px;height:135px;right:-19px;top:55%;opacity:.69}.hero-count{font-size:.75rem}.periods{margin:14px 0 15px}.periods button{min-height:44px;font-size:.875rem}.columns{display:flex;flex-direction:column;gap:8px}.work,.side{width:100%}.datebar{margin-bottom:10px}.date-title h2{font-size:1.07rem}.date-title{gap:5px}.date-controls .icon-button{min-width:44px}.entry-head{padding:8px 9px 8px 15px}.entry-body,.summary-card{padding-inline:15px}.entry-footer .perspective-button{margin-left:0}.top .button{padding-inline:9px}.side{gap:10px}.entry-footer .button{padding-inline:10px}}
 @media(max-width:360px){.wrap{width:calc(100% - 22px)}.today{display:none}.date-controls{gap:3px}.brand{font-size:1rem}.top-actions{gap:4px}.hero p{max-width:215px}}@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important}}
 .view-switch{display:flex;gap:6px;margin:0 0 13px}.view-switch .button[aria-pressed=true]{color:var(--purple);border-color:#daccec;background:var(--soft)}
+.day-steps{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.day-step{min-width:0}.day-steps .day-step+.day-step{border-left:1px solid var(--line);padding-left:16px}.step-heading{font-size:.92rem;color:var(--purple);font-weight:750;margin:16px 0 0}.read-entry .step-heading{margin:5px 0 9px}
+.week-selection{margin-bottom:10px}.week-selection .section-copy{margin-bottom:6px}.week-connections{margin:12px 0 0}.week-connections h4{margin:0 0 6px;font-size:.9rem}.week-connections p{margin-bottom:8px}.pair-form{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;gap:6px;align-items:end}.pair-field{font-size:.83rem;color:var(--muted);min-width:0}.pair-field select{display:block;width:100%;min-height:44px;margin-top:4px;padding:7px;border:1px solid var(--line);border-radius:8px;background:#f9f7fc;font-family:inherit;font-size:1rem;color:var(--ink)}.connections-list{display:grid;gap:6px;margin:8px 0}.pair-row{display:flex;align-items:center;gap:6px;min-width:0}.pair-row .link{flex:1}.pair-row>.icon{width:15px;height:15px;color:var(--purple)}
+.picked-note{background:var(--yellow);color:#473616}.read-section ul{padding-left:20px;margin:4px 0 0}.read-section li{white-space:pre-wrap;font-size:.95rem}
+@media(max-width:720px){.day-steps{grid-template-columns:1fr;gap:8px}.day-steps .day-step+.day-step{border-left:0;border-top:1px solid var(--line);padding-left:0;padding-top:4px}.pair-form{grid-template-columns:repeat(2,minmax(0,1fr))}.pair-form .button{grid-column:1/-1;justify-self:start}.pair-row .link{padding-inline:6px}}
 .overview{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:21px;overflow-wrap:anywhere}
 .overview-header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-bottom:14px;border-bottom:1px solid var(--line)}
 .overview-header h2{font-size:1.24rem}.overview-header span{color:var(--muted);font-size:.85rem}
@@ -81,38 +85,46 @@ const icons={
  plus:'<path d="M12 5v14M5 12h14"/>',close:'<path d="m6 6 12 12M6 18 18 6"/>',
  lock:'<rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 1 1 8 0v3m-4 4v3"/>',
  trash:'<path d="M4 7h16M9 7V4h6v3m3 0-1 13H7L6 7m4 4v5m4-5v5"/>',
- check:'<path d="m5 12 4 4L19 6"/>'
+ check:'<path d="m5 12 4 4L19 6"/>', arrow:'<path d="M3 12h17m-6-6 6 6-6 6"/>'
 };
 const icon=(name,extra='')=>`<svg class="icon ${extra}" viewBox="0 0 24 24" aria-hidden="true">${icons[name]}</svg>`;
 const $=id=>document.getElementById(id);
 const escapeHtml=value=>String(value??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;');
 const short=(s,n=52)=>{const t=String(s??'').trim().replace(/\s+/g,' ');return t.length>n?t.slice(0,n)+'…':t;};
 const meta={
- day:{label:'日复盘',title:'每日复盘',prompt:'今天，哪件事让你心里动了一下？',guides:['记下有感触的事，小事也可以。','写清当时的感受，再补一句现在的觉察。','点星标留下高亮，周末回看。']},
- week:{label:'周复盘',title:'每周复盘',prompt:'把这一周的片段连起来，看看什么在重复。',guides:['从这周的日记里挑出最重要的 3 条。','找出共同点，或用一句话写清它们的关系。','归纳出一个发现，安排一次具体尝试。']},
- month:{label:'月复盘',title:'每月复盘',prompt:'这个月，我有了哪些发现、尝试和收获？',guides:['内面写对自己的新认识、感受或在意的事。','行动写实际做过的尝试或改变。','结果写已经发生的收获或变化。三项各自挑出重要的内容。']}
+ day:{label:'日复盘',title:'每日复盘',prompt:'今天，哪件事让你心里动了一下？',guides:['选一件有感触的事，先分开记录事实和当时的想法、感受。','如果当时采取了行动，也可以补记行动和结果。','回看这件事，试着换个角度，再想想现在可以做什么。行动有了结果再回来补。']},
+ week:{label:'周复盘',title:'每周复盘',prompt:'从一周的记录里找线索，想清楚下一步。',guides:['平时可以在日复盘里简记每天 3 件有感触的事，各加一句感受或发现。','周末从本周日记挑出最重要的 3 条，用箭头标出看见的联结。','用一句话归纳它们让你看见了什么，比如自己的状态、在意的事或长处。','把自己想试的事写具体，包括何时、何地、和谁、做什么，必要时记下预算。']},
+ month:{label:'月复盘',title:'每月复盘',prompt:'这个月，我有了哪些发现、尝试和收获？',guides:['回看本月的记录，从内面、行动、结果各自挑出 1–3 条重要内容。','内面写感受或新认识。行动写实际做过的事。结果写已经发生的变化。','三项可以来自不同的事，每条单独换行。']}
 };
-const dayFields=[
- ['event','发生了什么','写一个能回想起来的细节','比如：晚饭后，我们拿早餐照片猜英语单词。'],
- ['feeling','当时有什么感受？','','比如：原本有点累，孩子主动出题时我觉得开心。'],
- ['insight','现在回看，有什么发现？','','比如：轮到孩子出题时，我也更享受这个过程。']
+const dayCaptureFields=[
+ ['event','发生了什么？','写当时能看见或听见的事实。','比如：晚饭后，我拿了两张早餐照片，孩子说想出题考我。'],
+ ['feeling','当时想了什么、感受到什么？','写下那一刻的真实反应。','比如：原本有点累，听到他主动出题，我一下子来了兴趣。'],
+ ['pastAction','当时做了什么？（可选）','','比如：我把手机递给他，让他挑要考我的照片。'],
+ ['pastResult','当时有什么结果？（可选）','','比如：我们轮流出了四题。']
 ];
+const dayReviewFields=[
+ ['insight','回看后有什么新发现？','可以换个视角，看看这件事还有什么意义。','比如：他有机会出题时，我也更享受这个过程。'],
+ ['nextAction','现在我可以做什么？（可选）','把已发生的事和你现在能改变的事分开。','比如：下次晚饭后留 5 分钟，请他来选照片。'],
+ ['nextResult','尝试后有什么结果？（可选）','行动后再补记，包括没有变化的情况。','比如：第二天他选好照片后，主动给我出了一题。']
+];
+const dayFields=[...dayCaptureFields,...dayReviewFields];
 const weekFields=[
- ['connection','它们有什么联结？','看哪些场景、感受或做法反复出现。','比如：猜照片和散步聊英语时，单词都跟眼前的东西有关。'],
- ['insight','这让我发现了什么？','把共通点写成一句可以继续观察的判断。','比如：让孩子也能出题时，我更愿意一起玩。'],
- ['action','下一步试什么？','写下时间、对象和一个小动作。','比如：下周三晚饭后，拿两张照片轮流出题 5 分钟。']
+ ['connection','联结 · 这些片段有什么关系？','写反复出现的线索，或哪件事带动了另一件。','比如：猜照片和散步聊英语时，单词都跟眼前的东西有关。'],
+ ['insight','抽象化 · 我看见了什么？','归纳自己的状态、在意的事、长处或行为习惯。','比如：让孩子也能出题时，我更愿意一起玩。'],
+ ['action','具体化 · 我想试什么？','写何时、何地、和谁、做什么、怎么做。必要时记下预算。','比如：下周三晚饭后，在家和孩子拿两张照片轮流出题 5 分钟。']
 ];
 const monthFields=[
- ['inner','内面','这个月，我对自己的感受、兴趣或在意的事有什么新认识？','比如：我发现独处一会儿，比多安排一项活动更能让我放松。'],
- ['action','行动','这个月，我实际做了哪些尝试或改变？','比如：有三个晚上，我用生活照片和孩子轮流出英语题。'],
- ['result','结果','这个月，已经发生了哪些收获或变化？','比如：我把搁置了两个月的普拉提课程笔记整理完了。'],
+ ['inner','内面','挑出 1–3 条对自己的新认识、感受或在意的事。','比如：我发现独处一会儿，比多安排一项活动更能让我放松。'],
+ ['action','行动','挑出 1–3 条这个月实际做过的尝试或改变。','比如：有三个晚上，我用生活照片和孩子轮流出英语题。'],
+ ['result','结果','挑出 1–3 条已经发生的收获或变化。','比如：我把搁置了两个月的普拉提课程笔记整理完了。'],
  ['insight','月度随记（可选）','还想保留什么？','写下一句感想，或记住这个月的一个细节。']
 ];
 const perspectives=[
  ['other','当事人','如果从对方的角度看，TA 当时可能看到了什么、在意什么？'],
  ['friend','旁观朋友','如果这是朋友讲给我的事，我会注意到什么？'],
  ['future','未来的我','一个月后回来看，我可能记得哪个细节？'],
- ['strength','已有长处','这件事里，我已经动用了哪些能力、经验或支持？']
+ ['strength','已有长处','这件事里，我已经动用了哪些能力、经验或支持？'],
+ ['assumption','换一个解释','我当时默认了什么？如果换一种解释，这件事还可能意味着什么？']
 ];
 const KEY='reflection-notebook-v1';
 function iso(date){return [date.getFullYear(),String(date.getMonth()+1).padStart(2,'0'),String(date.getDate()).padStart(2,'0')].join('-');}
@@ -182,30 +194,60 @@ function wrapIconButton(action,name,label){return `<button class="icon-button" d
 function dayCount(){return currentRecords().filter(hasContent).length;}
 function renderCount(){
  const records=currentRecords();
- const label=type==='day'?`已记 ${dayCount()} 条`:type==='week'?`已联结 ${records[0].links.length} 条线索`:(hasContent(records[0])?'本月已记录':'开始本月记录');
+ const label=type==='day'?`已记 ${dayCount()} 条`:type==='week'?`本周重点 ${weekFocus(records[0],keyNow()).length}/3`:(hasContent(records[0])?'本月已记录':'开始本月记录');
  $('hero-count').innerHTML=icon('book')+label;
 }
 function renderGuide(){
  $('guide-title').innerHTML=icon('spark')+'填写提示'+icon('down','chev');
- $('guide-content').innerHTML=`<ol>${meta[type].guides.map(t=>`<li>${t}</li>`).join('')}</ol><a href="https://ebooks.cmpbook.com/detail?id=29311" target="_blank" rel="noopener">查看《复盘自己》目录</a>`;
+ $('guide-content').innerHTML=`<ol>${meta[type].guides.map(t=>`<li>${t}</li>`).join('')}</ol><a href="https://ebooks.cmpbook.com/detail?id=29311" target="_blank" rel="noopener">《复盘自己》目录</a> · <a href="https://mainichi.doda.jp/article/2412252" target="_blank" rel="noopener">作者示范</a>`;
 }
-function recordLink(item){
- return `<a class="link${item.record.highlight?' highlight':''}" href="${hrefFor(item.ref)}" data-ref="${escapeHtml(item.ref)}">${icon(item.record.highlight?'star':'link')}<span>${escapeHtml(item.key)} · ${escapeHtml(item.title)}</span></a>`;
+function recordLink(item,picked=false){
+ return `<a class="link${item.record.highlight?' highlight':''}${picked?' picked-note':''}" href="${hrefFor(item.ref)}" data-ref="${escapeHtml(item.ref)}">${icon(item.record.highlight||picked?'star':'link')}<span>${escapeHtml(item.key)} · ${escapeHtml(item.title)}${picked?'<span class="sr">（本周重点）</span>':''}</span></a>`;
 }
 function renderHighlights(){
  const items=collect().filter(item=>item.record.highlight).slice(0,6);
  $('threads-title').innerHTML=icon('star')+'最近的高亮';
- $('highlights').innerHTML=items.length?`<div class="links-inline">${items.map(recordLink).join('')}</div>`:'<p class="empty">写好一条记录后，点星标把它留在这里。</p>';
+ $('highlights').innerHTML=items.length?`<div class="links-inline">${items.map(item=>recordLink(item)).join('')}</div>`:'<p class="empty">写好一条记录后，点星标把它留在这里。</p>';
 }
 function fieldMarkup([name,label,hint,placeholder],record){
  return `<label class="field"><b>${label}</b>${hint?`<small>${hint}</small>`:''}<textarea rows="2" data-field="${name}" placeholder="${placeholder}">${escapeHtml(record.fields[name])}</textarea></label>`;
 }
-function linksMarkup(record){
+function linksMarkup(record,{refs=record.links,picked=false}={}){
  const items=new Map(collect().map(item=>[item.ref,item]));
- return record.links.length?`<div class="links-inline">${record.links.map(ref=>{
+ return refs.length?`<div class="links-inline">${refs.map(ref=>{
   const item=items.get(ref);
-  return `<div class="link-row">${item?recordLink(item):'<span class="link">原记录已清空或删除</span>'}<button class="icon-button bare unlink" data-action="unlink" data-link="${escapeHtml(ref)}" aria-label="取消联结">${icon('close')}</button></div>`;
+  return `<div class="link-row">${item?recordLink(item,picked):'<span class="link">原记录已清空或删除</span>'}<button class="icon-button bare unlink" data-action="unlink" data-link="${escapeHtml(ref)}" aria-label="${picked?'取消选为重点':type==='month'?'移除参考记录':'取消联结'}">${icon('close')}</button></div>`;
  }).join('')}</div>`:'';
+}
+function weekFocus(record,key){
+ const end=moveDay(key,6);
+ return record.links.filter(ref=>{
+  const [kind,day]=ref.split(':');
+  if(kind!=='day'||day<key||day>end)return false;
+  const item=getRecord(ref);
+  return item&&hasContent(item);
+ }).slice(0,3);
+}
+function removeReference(record,ref){
+ record.links=record.links.filter(link=>link!==ref);
+ if(record.connections)record.connections=record.connections.filter(pair=>!pair.includes(ref));
+}
+function weekConnections(record,focus,{editing=false}={}){
+ const notes=new Map(collect().filter(item=>focus.includes(item.ref)).map(item=>[item.ref,item]));
+ const pairs=(record.connections??[]).filter(([from,to])=>notes.has(from)&&notes.has(to));
+ const list=pairs.length?`<div class="connections-list">${pairs.map(([from,to])=>
+  `<div class="pair-row">${recordLink(notes.get(from))}<span class="sr">联结到</span>${icon('arrow')}${recordLink(notes.get(to))}${editing?`<button class="icon-button bare unlink" data-action="remove-pair" data-from="${escapeHtml(from)}" data-to="${escapeHtml(to)}" aria-label="移除此箭头">${icon('close')}</button>`:''}</div>`
+ ).join('')}</div>`:'';
+ if(!editing)return list?`<section class="read-source"><h3>片段之间的箭头</h3>${list}</section>`:'';
+ const options=focus.map(ref=>`<option value="${escapeHtml(ref)}">${escapeHtml(short(notes.get(ref).title,23))}</option>`).join('');
+ const controls=focus.length>=2?`<form class="pair-form" data-pair-form><label class="pair-field">从<select name="from" required><option value="">选择片段</option>${options}</select></label><label class="pair-field">到<select name="to" required><option value="">选择片段</option>${options}</select></label><button class="button" type="submit">添加箭头</button></form>`:'<p class="empty">选出至少两条本周重点后，可以画箭头标记它们的联结。</p>';
+ return `<section class="week-connections"><h4>记录之间的联结</h4>${list}${controls}</section>`;
+}
+function weekSelection(record){
+ const focus=weekFocus(record,keyNow());
+ const references=record.links.filter(ref=>!focus.includes(ref));
+ const extras=references.length?`<details class="read-source"><summary>其他参考记录</summary>${linksMarkup(record,{refs:references})}</details>`:'';
+ return `<section class="week-selection"><p class="section-copy">聚焦 · 从本周日记挑出最重要的 3 条</p><button class="button" data-action="link">${icon('star')}挑选本周重点（${focus.length}/3）</button>${linksMarkup(record,{refs:focus,picked:true})}${extras}${weekConnections(record,focus,{editing:true})}</section>`;
 }
 function perspectivesMarkup(record,ref){
  const question=perspectives.find(([id])=>id===record.perspective)?.[2]??'选一个视角，再回看这条记录。';
@@ -220,22 +262,23 @@ function entryMarkup(record,index){
  const tools=`<button class="icon-button bare" data-action="highlight" aria-label="${starLabel}" title="${starLabel}" aria-pressed="${record.highlight}">${icon('star')}</button>`+(type==='day'?wrapIconButton('delete','trash','删除此条记录'):'');
  const linkButton=`<button class="button" data-action="link">${icon('link')}${type==='month'?'添加参考记录':'联结记录'}</button>`;
  const footer=`<div class="entry-footer">${type==='week'?'':linkButton}<button class="button perspective-button" data-action="perspective" aria-expanded="${openPerspectives.has(ref)}">${icon('spark')}视角切换</button></div>${perspectivesMarkup(record,ref)}`;
- const content=fieldsFor(type).map(field=>fieldMarkup(field,record)).join('');
+ const content=type==='day'?`<div class="day-steps"><section class="day-step"><h4 class="step-heading">第一步 · 如实记录</h4>${dayCaptureFields.map(field=>fieldMarkup(field,record)).join('')}</section><section class="day-step"><h4 class="step-heading">第二步 · 回看与发现</h4>${dayReviewFields.map(field=>fieldMarkup(field,record)).join('')}</section></div>`:fieldsFor(type).map(field=>fieldMarkup(field,record)).join('');
  return `<article class="card entry${record.highlight?' is-highlight':''}" id="${escapeHtml('entry-'+ref)}" data-record="${escapeHtml(ref)}">
  <div class="entry-head"><h3 tabindex="-1">${type==='day'?'片段 '+(index+1):type==='week'?'本周发现':'本月发现'}</h3><div class="tools">${tools}</div></div>
- <div class="${type==='day'?'entry-body':'summary-card'}">${type==='week'?'<p class="section-copy">先联结几条日记录，再写下它们让你想到什么。</p>'+linkButton+linksMarkup(record):''}${content}${footer}${type==='week'?'':linksMarkup(record)}</div></article>`;
+ <div class="${type==='day'?'entry-body':'summary-card'}">${type==='week'?weekSelection(record):''}${content}${footer}${type==='week'?'':linksMarkup(record)}</div></article>`;
 }
 function renderEditor(){
  $('editor').innerHTML=currentRecords().map(entryMarkup).join('')+`<div class="actions">${type==='day'?'<button class="button" data-action="add">'+icon('plus')+'再记一条</button>':''}<button class="button primary" data-action="save">${icon('check')}保存${meta[type].label}</button></div>`;
 }
-function readField([name,label],record,{showEmpty=false}={}){
+function readField([name,label],record,{showEmpty=false,asList=false}={}){
  const value=record.fields[name]?.trim();
  if(!value&&!showEmpty)return '';
  const style=['action','result'].includes(name)?' '+name:'';
- return `<section class="read-section${style}"><h4>${label}</h4><p${value?'':' class="empty"'}>${value?escapeHtml(value):'还未填写'}</p></section>`;
+ const contents=asList&&value?`<ul>${value.split('\n').map(line=>line.trim()).filter(Boolean).map(line=>`<li>${escapeHtml(line)}</li>`).join('')}</ul>`:`<p${value?'':' class="empty"'}>${value?escapeHtml(value):'还未填写'}</p>`;
+ return `<section class="read-section${style}"><h4>${label}</h4>${contents}</section>`;
 }
-function readLinks(title,items,empty){
- const content=items.length?`<div class="links-inline">${items.map(recordLink).join('')}</div>`:`<p class="empty">${empty}</p>`;
+function readLinks(title,items,empty,picked=[]){
+ const content=items.length?`<div class="links-inline">${items.map(item=>recordLink(item,picked.includes(item.ref))).join('')}</div>`:`<p class="empty">${empty}</p>`;
  return `<section class="read-source"><h3>${title}</h3>${content}</section>`;
 }
 function readPerspective(record){
@@ -261,14 +304,18 @@ function renderOverview(){
   const links=related.length?readLinks(type==='month'?'参考记录':'已联结的记录',related):'';
   const insight=readPerspective(record);
   if(type==='day'){
-   return `<article class="read-entry" id="entry-${escapeHtml(ref)}">${readHeading('片段 '+(allRecords.indexOf(record)+1),record)}${fields.map(field=>readField(field,record)).join('')}${insight}${links}</article>`;
+   const captured=dayCaptureFields.map(field=>readField(field,record)).join('');
+   const reviewed=dayReviewFields.map(field=>readField(field,record)).join('')+insight;
+   return `<article class="read-entry" id="entry-${escapeHtml(ref)}">${readHeading('片段 '+(allRecords.indexOf(record)+1),record)}<div class="day-steps">${captured?`<section class="day-step"><h4 class="step-heading">如实记录</h4>${captured}</section>`:''}${reviewed?`<section class="day-step"><h4 class="step-heading">回看与发现</h4>${reviewed}</section>`:''}</div>${links}</article>`;
   }
   if(type==='week'){
-   const days=periodItems.filter(item=>item.type==='day');
-   return `<article class="read-entry read-week" id="entry-${escapeHtml(ref)}"><div>${readHeading('本周发现',record)}${fields.map(field=>readField(field,record,{showEmpty:true})).join('')}${insight}</div><div class="calendar">${links}${readLinks('本周日记',days,'本周暂无日记。')}</div></article>`;
+   const days=periodItems.filter(item=>item.type==='day').reverse();
+   const focus=weekFocus(record,key);
+   const references=related.filter(item=>!focus.includes(item.ref));
+   return `<article class="read-entry read-week" id="entry-${escapeHtml(ref)}"><div>${readHeading('本周发现',record)}${fields.map(field=>readField(field,record,{showEmpty:true})).join('')}${insight}${weekConnections(record,focus)}</div><div class="calendar">${readLinks('本周重点',focus.map(ref=>byRef.get(ref)),'还没有选出本周重点。',focus)}${readLinks('本周日记',days,'本周暂无日记。',focus)}${references.length?readLinks('其他参考记录',references):''}</div></article>`;
   }
   const weeks=periodItems.filter(item=>item.type==='week'&&!record.links.includes(item.ref));
-  return `<article class="read-entry" id="entry-${escapeHtml(ref)}">${readHeading('本月变化',record)}<div class="read-month">${fields.slice(0,3).map(field=>readField(field,record,{showEmpty:true})).join('')}</div>${readField(fields[3],record)}${insight}${links}${weeks.length?readLinks('本月周记',weeks):''}</article>`;
+  return `<article class="read-entry" id="entry-${escapeHtml(ref)}">${readHeading('本月变化',record)}<div class="read-month">${fields.slice(0,3).map(field=>readField(field,record,{showEmpty:true,asList:true})).join('')}</div>${readField(fields[3],record)}${insight}${links}${weeks.length?readLinks('本月周记',weeks):''}</article>`;
  };
  const hasPeriodNotes=type==='week'?periodItems.some(item=>item.type==='day'):type==='month'&&periodItems.some(item=>item.type==='week');
  const hasOverview=records.length||hasPeriodNotes;
@@ -325,12 +372,15 @@ function inCurrentPeriod(item,kind,key){
 function picker(source){
  const current=source?getRecord(source):null;
  const [kind,key]=source?.split(':')??[];
- const firstList=collect().filter(item=>item.ref!==source);
- openDialog(source?(kind==='month'?'添加参考记录':'联结记录'):'历史记录',`<div class="picker-tools"><input type="search" id="record-search" aria-label="搜索日期或记录内容" placeholder="搜索日期或记录内容" autocomplete="off"><button id="only-stars" class="button" aria-pressed="false">${icon('star')}高亮</button></div>
- ${source?'<div class="picker-tools"><button id="same-period" class="button" aria-pressed="'+(kind!=='day')+'">仅看本周期</button></div>':''}
+ const firstList=collect().filter(item=>item.ref!==source&&(kind!=='week'||item.type==='day'&&inCurrentPeriod(item,kind,key)));
+ const heading=kind==='week'?'挑选本周重点':kind==='month'?'添加参考记录':'联结记录';
+ openDialog(source?heading:'历史记录',`<div class="picker-tools"><input type="search" id="record-search" aria-label="搜索日期或记录内容" placeholder="搜索日期或记录内容" autocomplete="off"><button id="only-stars" class="button" aria-pressed="false">${icon('star')}高亮</button></div>
+ ${kind==='week'?'<p id="weekly-limit" class="empty" aria-live="polite"></p>':source?'<div class="picker-tools"><button id="same-period" class="button" aria-pressed="'+(kind==='month')+'">仅看本周期</button></div>':''}
  <div id="picker-list" class="picker-list"></div>`);
  const search=$('record-search'), stars=$('only-stars'), same=$('same-period');
  function update(){
+  const focus=kind==='week'?weekFocus(current,key):[];
+  if(kind==='week')$('weekly-limit').textContent=`已选 ${focus.length}/3 条本周日记`;
   const q=search.value.trim().toLowerCase();
   const list=firstList.filter(item=>{
    if(stars.getAttribute('aria-pressed')==='true'&&!item.record.highlight)return false;
@@ -339,8 +389,10 @@ function picker(source){
   });
   $('picker-list').innerHTML=list.length?list.map(item=>{
    const picked=current?.links.includes(item.ref);
-   return `<div class="pick-row">${recordLink(item)}${source?`<button class="button${picked?'':' primary'}" data-pick="${escapeHtml(item.ref)}" aria-pressed="${picked}">${kind==='month'?(picked?'已添加':'添加'):(picked?'已联结':'联结')}</button>`:''}</div>`;
-  }).join(''):`<p class="empty">${source?'这里还没有可联结的记录。可切换筛选，或先写一条日复盘。':'这里还没有符合条件的记录。'}</p>`;
+   const limit=kind==='week'&&!picked&&focus.length>=3;
+   const label=kind==='week'?(picked?'已选':'选为重点'):kind==='month'?(picked?'已添加':'添加'):(picked?'已联结':'联结');
+   return `<div class="pick-row">${recordLink(item,focus.includes(item.ref))}${source?`<button class="button${picked?'':' primary'}" data-pick="${escapeHtml(item.ref)}" aria-pressed="${picked}" ${limit?'disabled':''}>${label}</button>`:''}</div>`;
+  }).join(''):`<p class="empty">${kind==='week'?'没有符合筛选的本周日记。':'这里还没有符合条件的记录。'}</p>`;
  }
  search.addEventListener('input',update);
  [stars,same].filter(Boolean).forEach(button=>button.addEventListener('click',()=>{button.setAttribute('aria-pressed',button.getAttribute('aria-pressed')!=='true');update();}));
@@ -350,7 +402,8 @@ function picker(source){
   const ref=button.dataset.pick;
   if(!getRecord(ref)||ref===source)return;
   const picked=current.links.includes(ref);
-  current.links=picked?current.links.filter(r=>r!==ref):[...current.links,ref];
+  if(picked)removeReference(current,ref);
+  else current.links.push(ref);
   save();renderEditor();renderCount();update();
   [...$('picker-list').querySelectorAll('[data-pick]')].find(item=>item.dataset.pick===ref)?.focus();
  });
@@ -385,6 +438,21 @@ $('editor').addEventListener('input',event=>{
  getRecord(article.dataset.record).fields[field]=event.target.value;
  save();renderCount();renderHighlights();
 });
+$('editor').addEventListener('submit',event=>{
+ const form=event.target.closest('[data-pair-form]');
+ if(!form)return;
+ event.preventDefault();
+ const record=getRecord(form.closest('[data-record]').dataset.record);
+ const choices=new FormData(form);
+ const from=choices.get('from'), to=choices.get('to');
+ if(!from||!to)return;
+ if(from===to){notify('请选择两条不同的片段');return;}
+ const connections=record.connections??(record.connections=[]);
+ if(connections.some(pair=>pair[0]===from&&pair[1]===to)){notify('这个方向的箭头已经添加');return;}
+ connections.push([from,to]);
+ save();renderEditor();$('editor').querySelector('[data-pair-form] select')?.focus();
+ notify('已添加联结箭头');
+});
 $('editor').addEventListener('click',event=>{
  const button=event.target.closest('[data-action]');if(!button)return;
  const action=button.dataset.action;
@@ -415,13 +483,16 @@ $('editor').addEventListener('click',event=>{
  }else if(action==='link'){
   picker(ref);
  }else if(action==='unlink'){
-  record.links=record.links.filter(link=>link!==button.dataset.link);save();renderEditor();renderCount();renderHighlights();
-  document.getElementById('entry-'+ref)?.querySelector('[data-action=link]')?.focus();notify('已取消联结');
+  removeReference(record,button.dataset.link);save();renderEditor();renderCount();renderHighlights();
+  document.getElementById('entry-'+ref)?.querySelector('[data-action=link]')?.focus();notify(type==='month'?'已移除参考记录':'已移除该记录');
+ }else if(action==='remove-pair'){
+  record.connections=record.connections.filter(([from,to])=>from!==button.dataset.from||to!==button.dataset.to);
+  save();renderEditor();$('editor').querySelector('[data-pair-form] select')?.focus();notify('已移除箭头');
  }else if(action==='delete'){
   if(hasContent(record)&&!confirm('删除这条记录？引用它的联结会一并移除。'))return;
   data.day[keyNow()]=currentRecords().filter(entry=>entry!==record);
   for(const periods of Object.values(data))for(const value of Object.values(periods)){
-   for(const entry of Array.isArray(value)?value:[value])entry.links=entry.links.filter(link=>link!==ref);
+   for(const entry of Array.isArray(value)?value:[value])removeReference(entry,ref);
   }
   openPerspectives.delete(ref);save();renderEditor();renderCount();renderHighlights();$('editor').querySelector('[data-action=add]').focus();
  }
