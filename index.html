@@ -90,7 +90,7 @@ const short=(s,n=52)=>{const t=String(s??'').trim().replace(/\s+/g,' ');return t
 const meta={
  day:{label:'日复盘',title:'每日复盘',prompt:'今天，哪件事让你心里动了一下？',guides:['记下有感触的事，小事也可以。','写清当时的感受，再补一句现在的觉察。','点星标留下高亮，周末回看。']},
  week:{label:'周复盘',title:'每周复盘',prompt:'把这一周的片段连起来，看看什么在重复。',guides:['从这周的日记里挑出最重要的 3 条。','找出共同点，或用一句话写清它们的关系。','归纳出一个发现，安排一次具体尝试。']},
- month:{label:'月复盘',title:'每月复盘',prompt:'回看几周的记录，看看自己有哪些变化。',guides:['回看这一月的周记，挑出重要的片段。','分别写下内面、行动和结果。','联结以前的记录，看看变化从哪里开始。']}
+ month:{label:'月复盘',title:'每月复盘',prompt:'这个月，我有了哪些发现、尝试和收获？',guides:['内面写对自己的新认识、感受或在意的事。','行动写实际做过的尝试或改变。','结果写已经发生的收获或变化。三项各自挑出重要的内容。']}
 };
 const dayFields=[
  ['event','发生了什么','写一个能回想起来的细节','比如：晚饭后，我们拿早餐照片猜英语单词。'],
@@ -103,10 +103,10 @@ const weekFields=[
  ['action','下一步试什么？','写下时间、对象和一个小动作。','比如：下周三晚饭后，拿两张照片轮流出题 5 分钟。']
 ];
 const monthFields=[
- ['inner','内面','这个月，我更清楚自己在意什么了吗？','比如：我享受的是一起玩的互动。'],
- ['action','行动','我实际做了什么？','比如：试了三次用照片轮流出题。'],
- ['result','结果','后来具体发生了什么？','比如：有一次孩子主动问，今天猜什么？'],
- ['insight','回看后的发现','哪条行动与结果有关？可以联结前几个月的笔记。','比如：孩子有选择权的时候，更愿意自己开口。']
+ ['inner','内面','这个月，我对自己的感受、兴趣或在意的事有什么新认识？','比如：我发现独处一会儿，比多安排一项活动更能让我放松。'],
+ ['action','行动','这个月，我实际做了哪些尝试或改变？','比如：有三个晚上，我用生活照片和孩子轮流出英语题。'],
+ ['result','结果','这个月，已经发生了哪些收获或变化？','比如：我把搁置了两个月的普拉提课程笔记整理完了。'],
+ ['insight','月度随记（可选）','还想保留什么？','写下一句感想，或记住这个月的一个细节。']
 ];
 const perspectives=[
  ['other','当事人','如果从对方的角度看，TA 当时可能看到了什么、在意什么？'],
@@ -218,12 +218,12 @@ function entryMarkup(record,index){
  const ref=reference(type,keyNow(),record.id);
  const starLabel=record.highlight?'取消高亮':'标记高亮';
  const tools=`<button class="icon-button bare" data-action="highlight" aria-label="${starLabel}" title="${starLabel}" aria-pressed="${record.highlight}">${icon('star')}</button>`+(type==='day'?wrapIconButton('delete','trash','删除此条记录'):'');
- const linkButton=`<button class="button" data-action="link">${icon('link')}联结记录</button>`;
- const footer=`<div class="entry-footer">${type==='day'?linkButton:''}<button class="button perspective-button" data-action="perspective" aria-expanded="${openPerspectives.has(ref)}">${icon('spark')}视角切换</button></div>${perspectivesMarkup(record,ref)}`;
+ const linkButton=`<button class="button" data-action="link">${icon('link')}${type==='month'?'添加参考记录':'联结记录'}</button>`;
+ const footer=`<div class="entry-footer">${type==='week'?'':linkButton}<button class="button perspective-button" data-action="perspective" aria-expanded="${openPerspectives.has(ref)}">${icon('spark')}视角切换</button></div>${perspectivesMarkup(record,ref)}`;
  const content=fieldsFor(type).map(field=>fieldMarkup(field,record)).join('');
  return `<article class="card entry${record.highlight?' is-highlight':''}" id="${escapeHtml('entry-'+ref)}" data-record="${escapeHtml(ref)}">
  <div class="entry-head"><h3 tabindex="-1">${type==='day'?'片段 '+(index+1):type==='week'?'本周发现':'本月发现'}</h3><div class="tools">${tools}</div></div>
- <div class="${type==='day'?'entry-body':'summary-card'}">${type==='day'?content:`<p class="section-copy">${type==='week'?'先联结几条日记录，再写下它们让你想到什么。':'把这个月的重要变化写下来，也可以联结以前的记录。'}</p>${linkButton}${linksMarkup(record)}${content}`}${footer}${type==='day'?linksMarkup(record):''}</div></article>`;
+ <div class="${type==='day'?'entry-body':'summary-card'}">${type==='week'?'<p class="section-copy">先联结几条日记录，再写下它们让你想到什么。</p>'+linkButton+linksMarkup(record):''}${content}${footer}${type==='week'?'':linksMarkup(record)}</div></article>`;
 }
 function renderEditor(){
  $('editor').innerHTML=currentRecords().map(entryMarkup).join('')+`<div class="actions">${type==='day'?'<button class="button" data-action="add">'+icon('plus')+'再记一条</button>':''}<button class="button primary" data-action="save">${icon('check')}保存${meta[type].label}</button></div>`;
@@ -258,7 +258,7 @@ function renderOverview(){
   const ref=reference(type,key,record.id);
   const fields=fieldsFor(type);
   const related=linked(record);
-  const links=related.length?readLinks('已联结的记录',related):'';
+  const links=related.length?readLinks(type==='month'?'参考记录':'已联结的记录',related):'';
   const insight=readPerspective(record);
   if(type==='day'){
    return `<article class="read-entry" id="entry-${escapeHtml(ref)}">${readHeading('片段 '+(allRecords.indexOf(record)+1),record)}${fields.map(field=>readField(field,record)).join('')}${insight}${links}</article>`;
@@ -268,7 +268,7 @@ function renderOverview(){
    return `<article class="read-entry read-week" id="entry-${escapeHtml(ref)}"><div>${readHeading('本周发现',record)}${fields.map(field=>readField(field,record,{showEmpty:true})).join('')}${insight}</div><div class="calendar">${links}${readLinks('本周日记',days,'本周暂无日记。')}</div></article>`;
   }
   const weeks=periodItems.filter(item=>item.type==='week'&&!record.links.includes(item.ref));
-  return `<article class="read-entry" id="entry-${escapeHtml(ref)}">${readHeading('本月变化',record)}<div class="read-month">${fields.slice(0,3).map(field=>readField(field,record,{showEmpty:true})).join('')}</div>${readField(fields[3],record)}${insight}${links}${readLinks('本月其他周记',weeks,'本月暂无其他周记。')}</article>`;
+  return `<article class="read-entry" id="entry-${escapeHtml(ref)}">${readHeading('本月变化',record)}<div class="read-month">${fields.slice(0,3).map(field=>readField(field,record,{showEmpty:true})).join('')}</div>${readField(fields[3],record)}${insight}${links}${weeks.length?readLinks('本月周记',weeks):''}</article>`;
  };
  const hasPeriodNotes=type==='week'?periodItems.some(item=>item.type==='day'):type==='month'&&periodItems.some(item=>item.type==='week');
  const hasOverview=records.length||hasPeriodNotes;
@@ -326,7 +326,7 @@ function picker(source){
  const current=source?getRecord(source):null;
  const [kind,key]=source?.split(':')??[];
  const firstList=collect().filter(item=>item.ref!==source);
- openDialog(source?'联结记录':'历史记录',`<div class="picker-tools"><input type="search" id="record-search" aria-label="搜索日期或记录内容" placeholder="搜索日期或记录内容" autocomplete="off"><button id="only-stars" class="button" aria-pressed="false">${icon('star')}高亮</button></div>
+ openDialog(source?(kind==='month'?'添加参考记录':'联结记录'):'历史记录',`<div class="picker-tools"><input type="search" id="record-search" aria-label="搜索日期或记录内容" placeholder="搜索日期或记录内容" autocomplete="off"><button id="only-stars" class="button" aria-pressed="false">${icon('star')}高亮</button></div>
  ${source?'<div class="picker-tools"><button id="same-period" class="button" aria-pressed="'+(kind!=='day')+'">仅看本周期</button></div>':''}
  <div id="picker-list" class="picker-list"></div>`);
  const search=$('record-search'), stars=$('only-stars'), same=$('same-period');
@@ -339,7 +339,7 @@ function picker(source){
   });
   $('picker-list').innerHTML=list.length?list.map(item=>{
    const picked=current?.links.includes(item.ref);
-   return `<div class="pick-row">${recordLink(item)}${source?`<button class="button${picked?'':' primary'}" data-pick="${escapeHtml(item.ref)}" aria-pressed="${picked}">${picked?'已联结':'联结'}</button>`:''}</div>`;
+   return `<div class="pick-row">${recordLink(item)}${source?`<button class="button${picked?'':' primary'}" data-pick="${escapeHtml(item.ref)}" aria-pressed="${picked}">${kind==='month'?(picked?'已添加':'添加'):(picked?'已联结':'联结')}</button>`:''}</div>`;
   }).join(''):`<p class="empty">${source?'这里还没有可联结的记录。可切换筛选，或先写一条日复盘。':'这里还没有符合条件的记录。'}</p>`;
  }
  search.addEventListener('input',update);
