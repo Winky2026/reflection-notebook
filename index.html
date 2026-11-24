@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#f7f5fb">
+<meta name="theme-color" content="#f1f3f6">
 <meta name="description" content="记录感受，联结线索，把日、周、月复盘写在同一本笔记里。">
 <title>复盘笔记</title>
 <style>
@@ -45,6 +45,129 @@ main{padding-top:16px;padding-bottom:calc(95px + env(safe-area-inset-bottom))}.h
 body[data-view=archive] :is(.datebar,.view-switch,#hero-count,#help){display:none}body[data-view=archive] .hero{margin-bottom:14px}
 @media(max-width:720px){.hero{min-height:102px;padding:14px 15px;gap:6px}.hero h1{font-size:1.7rem}.hero p{font-size:.83rem;max-width:220px}.hero .orbit{width:143px;height:109px;right:-11px}.top{height:54px}.note-compose .field textarea{resize:vertical}dialog{position:fixed;inset:auto 0 0;width:100%;max-width:none;max-height:87dvh;margin:0;border-radius:17px 17px 0 0;padding-bottom:env(safe-area-inset-bottom)}body:has(textarea:focus) .dock{display:none}}
 @media(max-width:360px){.wrap{width:calc(100% - 24px)}.hero p{max-width:195px}.date-controls .icon-button{min-width:44px}}
+</style>
+<style>
+:root{
+  --bg:#f1f3f6;--paper:#fff;--ink:#080c0e;--muted:rgb(8 12 14 / .62);
+  --line:#dce1e8;--purple:#253144;--hero:#253144;--soft:#e6ebf2;--radius:23px;
+  --yellow:#fff0b9;--sage:#d5f0e2;--mist:#d7e7f6;--peach:#f8d7c1;--sakura:#f6dde8;
+  --lavender:#e8dcf8;--celadon:#dceae2;--gray:#e7e9ed;--white:#fff;
+  --glass-edge:rgb(255 255 255 / .86);
+  --glass-shadow:inset 0 1px 0 rgb(255 255 255 / .88),0 7px 19px rgb(34 49 70 / .09);
+  --ease-out:cubic-bezier(.2,.75,.22,1);
+}
+html{scroll-padding-bottom:95px}body{background:var(--bg)}header{border:0}
+.wrap{width:min(100% - 36px,590px)}
+.brand-icon{background:var(--purple);color:#fff}
+.hero{min-height:0;padding:15px 0 5px;gap:10px;border-radius:0;color:var(--ink);background:transparent}
+.hero h1{font-size:2rem;font-weight:730;margin:0 0 4px}
+.hero p{color:var(--muted);max-width:none;font-size:.875rem}
+.hero .orbit{display:none}
+.hero-count,.today{color:var(--purple);background:#e4eaf2}
+.hero-count .icon{color:inherit}
+.datebar{margin:10px 0 13px}.date-title h2{font-size:1rem;color:var(--muted)}
+.date-controls .icon-button,.top-actions .button{background:#fbfcfe;border-color:var(--glass-edge);border-radius:16px}
+.button.primary{background:var(--purple);border-color:var(--purple);color:white}
+.button.primary:hover{background:#34445b;border-color:#34445b}
+.button.text{color:var(--purple)}
+.button:hover,.icon-button:hover,.note-open:hover,.step-open:hover{background:#e5ebf3;border-color:#d5dde7}
+.view-switch .button[aria-pressed=true],.archive-filter .button[aria-pressed=true],.choices .button[aria-pressed=true]{background:var(--purple);color:white;border-color:var(--purple)}
+.view-switch .button,.step-open,.note-open{color:var(--ink)}
+.glass,.note-card,.step-item,.overview,.archive-group{
+  border:1px solid var(--glass-edge);border-radius:var(--radius);box-shadow:var(--glass-shadow);background:#fcfdff;
+}
+.glass{background:rgb(255 255 255 / .74)}
+@supports ((backdrop-filter:blur(20px)) or (-webkit-backdrop-filter:blur(20px))){
+  .glass,.note-card,.overview,.archive-group{
+    -webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);
+  }
+}
+.dock{
+  bottom:calc(10px + env(safe-area-inset-bottom));left:50%;right:auto;transform:translateX(-50%);
+  width:min(100% - 24px,608px);border-radius:30px;padding:6px;
+  border:1px solid var(--glass-edge);background:#fcfdff;box-shadow:var(--glass-shadow);
+}
+@supports ((backdrop-filter:blur(20px)) or (-webkit-backdrop-filter:blur(20px))){
+  .dock{background:rgb(255 255 255 / .62);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px)}
+}
+.dock .periods{width:100%;gap:4px}.dock .periods button{border-radius:21px;color:var(--purple);min-height:52px}
+.dock .periods button[aria-current=true]{background:var(--purple);color:white}
+.dock .periods button[aria-current=true]:focus-visible{outline-offset:2px;outline-color:var(--purple)}
+.toast{bottom:calc(87px + env(safe-area-inset-bottom))}
+.main-card,.card.entry,.step-item,.overview,.archive-group,.note-card,.composer-panel{color:var(--ink)}
+body[data-period=day][data-view=edit] #view-switch{display:none}
+.note-board{display:block;max-width:440px;padding:15px 16px 16px;margin:auto}
+.note-card{--note-tint:var(--mist);--angle:-6deg;--offset:-6%;position:relative;z-index:3;
+  width:86%;margin-inline:auto;transform:translateX(var(--offset)) rotate(var(--angle));
+  background:var(--note-tint);min-height:133px;box-shadow:inset 0 1px 0 #fff,0 12px 27px rgb(39 52 70 / .14);
+}
+.note-card:nth-child(2){--note-tint:var(--yellow);--angle:6deg;--offset:2%;z-index:2;margin-bottom:-63px}
+.note-card:nth-child(3){--note-tint:var(--sage);--angle:7deg;--offset:9%;z-index:1;margin-bottom:-65px}
+.note-card:nth-child(n+4){--note-tint:var(--gray);--angle:0deg;--offset:0%;margin-top:12px;width:100%}
+@supports ((backdrop-filter:blur(20px)) or (-webkit-backdrop-filter:blur(20px))){
+  .note-card{background:color-mix(in srgb,var(--note-tint) 72%,transparent)}
+}
+.note-card:nth-child(1){grid-row:3}
+.note-card:nth-child(2){grid-row:2}
+.note-card:nth-child(3){grid-row:1}
+.note-board{display:grid;grid-template-columns:minmax(0,1fr)}
+.note-card.is-highlight{border-color:var(--glass-edge)}
+.note-line{padding:10px;gap:0}
+.note-open{min-height:48px;border-radius:13px;padding:6px;align-items:flex-start;color:var(--ink)}
+.note-open:hover{background:rgb(255 255 255 / .33)}
+.note-index{background:rgb(255 255 255 / .57);color:var(--purple);border-radius:10px}
+.note-copy{gap:2px;padding-top:3px}.note-copy strong{font-size:.94rem}.note-copy .written{font-size:1.02rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.note-line>.icon-button{flex:none;border-radius:13px;margin-top:0}.note-line>.icon-button[aria-pressed=true]{background:#fff0b9;color:#5c420c}
+.day-overview-action{display:flex;justify-content:center;margin:9px 0 2px}
+.day-overview-action .button{padding:9px 20px;border-radius:21px;min-height:48px;color:var(--purple)}
+.composer-screen{max-width:590px;margin:auto}
+body[data-composing=true] :is(header,.hero,.datebar,.view-switch,.dock,.side){display:none}
+body[data-composing=true] main{padding-top:max(12px,env(safe-area-inset-top));padding-bottom:24px}
+.composer-head{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.composer-head h1{font-size:1.25rem}.composer-head .icon-button{border-radius:17px}
+.composer-panel{padding:15px;min-height:232px;animation:enter-composer .22s var(--ease-out) both}
+.composer-panel .field{padding-top:0}
+.composer-panel .field textarea{min-height:138px;resize:vertical;background:rgb(255 255 255 / .42);border-color:var(--glass-edge)}
+.composer-panel .field textarea:focus{background:rgb(255 255 255 / .67);border-color:#a5b3c6}
+.composer-screen>.button.primary{width:100%;min-height:49px;margin-top:12px;border-radius:23px}
+.composer-panel .entry-footer{margin-top:6px}.composer-panel .entry-footer .button{margin-left:0}
+.draft-status{font-size:.8rem;color:var(--muted);margin-top:6px}
+.composer-panel .perspective,.step-list .step-open{background:transparent}
+.field textarea,.pair-field select,.dialog-inner input[type=date],.picker-tools input[type=search]{background:#f4f6f9;color:var(--ink);border-color:#e1e6ed;caret-color:var(--purple)}
+.field textarea::placeholder{color:var(--muted)}
+.field textarea:focus{border-color:#a5b3c6}.field+.field,.entry-head{border-color:var(--line)}
+.card.entry{background:rgb(255 255 255 / .4);border-color:var(--glass-edge);box-shadow:var(--glass-shadow)}
+.step-item{border-radius:18px}.step-item.open{border-color:#a9b8ce}
+.step-item:nth-child(1),.archive-group:nth-child(4n+1){background:color-mix(in srgb,var(--mist) 70%,white)}
+.step-item:nth-child(2),.archive-group:nth-child(4n+2){background:color-mix(in srgb,var(--celadon) 70%,white)}
+.step-item:nth-child(3),.archive-group:nth-child(4n+3){background:color-mix(in srgb,var(--peach) 64%,white)}
+.step-item:nth-child(4),.archive-group:nth-child(4n){background:color-mix(in srgb,var(--lavender) 60%,white)}
+.archive-group{margin:0 0 10px}
+.link{background:#e7edf5;color:var(--purple)}.link.highlight,.link.picked-note{background:var(--yellow);color:#46371b}
+.read-section,.read-section.action,.read-section.result{background:#e8edf4}
+.read-month .read-section:nth-child(1){background:var(--celadon)}.read-month .read-section:nth-child(2){background:var(--mist)}.read-month .read-section:nth-child(3){background:#fae4d5}
+.overview{background:rgb(255 255 255 / .61)}
+body[data-period=day] .read-entry{padding:15px;background:var(--mist);border:1px solid var(--glass-edge);border-radius:var(--radius);box-shadow:var(--glass-shadow)}
+body[data-period=day] .read-entry:nth-child(3n+2){background:#f9e5db}
+body[data-period=day] .read-entry:nth-child(3n){background:var(--sage)}
+body[data-period=day] .read-entry+.read-entry{margin-top:10px}
+body[data-period=day] .read-note{margin:0}
+.overview-return{display:flex;justify-content:center;margin-top:15px}
+.overview-return .button{border-radius:21px;min-width:150px}
+.perspective{background:#e8edf4;color:var(--ink)}.read-section h4,.step-heading,.step-copy small{color:var(--muted)}
+dialog{border:1px solid var(--glass-edge);border-radius:var(--radius);background:#f9fbfd;box-shadow:0 19px 67px rgb(22 32 47 / .23)}
+dialog::backdrop{background:rgb(27 41 58 / .29)}
+@supports ((backdrop-filter:blur(20px)) or (-webkit-backdrop-filter:blur(20px))){
+  dialog{background:rgb(248 251 255 / .76);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px)}
+  dialog::backdrop{-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px)}
+}
+dialog[open]{animation:enter-sheet .22s var(--ease-out) both}.dialog-head{background:rgb(249 251 255 / .82)}
+.pair-row>.icon{animation:show-connection .2s var(--ease-out) both}
+@keyframes enter-composer{from{transform:translateY(9px);opacity:.82}to{transform:none;opacity:1}}
+@keyframes enter-sheet{from{transform:translateY(14px);opacity:.84}to{transform:none;opacity:1}}
+@keyframes show-connection{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0)}}
+@media(max-width:720px){.hero{padding:7px 0 3px;min-height:0}.hero h1{font-size:1.8rem}.hero p{max-width:none}.datebar{margin-top:7px}.note-board{padding-inline:8px}dialog{border-radius:23px 23px 0 0}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important}}
 </style>
 </head>
 <body>
@@ -101,7 +224,7 @@ const $=id=>document.getElementById(id);
 const escapeHtml=value=>String(value??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;');
 const short=(s,n=52)=>{const t=String(s??'').trim().replace(/\s+/g,' ');return t.length>n?t.slice(0,n)+'…':t;};
 const meta={
- day:{label:'日复盘',title:'每日复盘',prompt:'每天记三件有感触的小事。',guides:['有感触的事随手写一句，可以接着写感受或发现。','想深入想想时，打开这条记录，点「换个角度」。','当天的几条片段可以在「复盘总览」合在一起看。']},
+ day:{label:'日复盘',title:'每日复盘',prompt:'随手记下三件有感触的小事。',guides:['日常简记是周复盘的素材。写一件让你有感触的事，再添一句感受、发现或学到的东西。','想详细回看一件事，可打开该条记录并选择「深入复盘」。先如实记录，再回看它对自己的意义。','「日复盘总览」可以一起读完当天的记录。']},
  week:{label:'周复盘',title:'每周复盘',prompt:'从一周的记录里找线索，想清楚下一步。',guides:['平时可以在日复盘里简记每天 3 件有感触的事，各加一句感受或发现。','周末从本周日记挑出最重要的 3 条，用箭头标出看见的联结。','用一句话归纳它们让你看见了什么，比如自己的状态、在意的事或长处。','把自己想试的事写具体，包括何时、何地、和谁、做什么，必要时记下预算。']},
  month:{label:'月复盘',title:'每月复盘',prompt:'这个月，我有了哪些发现、尝试和收获？',guides:['回看本月的记录，从内面、行动、结果各自挑出 1–3 条重要内容。','内面写感受或新认识。行动写实际做过的事。结果写已经发生的变化。','三项可以来自不同的事，每条单独换行。']}
 };
@@ -255,7 +378,7 @@ function weekSelection(record){
  const focus=weekFocus(record,keyNow());
  const references=record.links.filter(ref=>!focus.includes(ref));
  const extras=references.length?`<details class="read-source"><summary>其他参考记录</summary>${linksMarkup(record,{refs:references})}</details>`:'';
- return `<section class="week-selection"><p class="section-copy">聚焦 · 从本周日记挑出最重要的 3 条</p><button class="button" data-action="link">${icon('star')}挑选本周重点（${focus.length}/3）</button>${linksMarkup(record,{refs:focus,picked:true})}${extras}${weekConnections(record,focus,{editing:true})}</section>`;
+ return `<section class="week-selection"><p class="section-copy">从本周日记挑出最重要的 3 条</p><button class="button" data-action="link">${icon('star')}挑选本周重点（${focus.length}/3）</button>${linksMarkup(record,{refs:focus,picked:true})}${extras}</section>`;
 }
 function perspectivesMarkup(record){
  const question=perspectives.find(([id])=>id===record.perspective)?.[2]??'选一个视角，再回看这条记录。';
@@ -268,39 +391,47 @@ function starButton(record){
  const starLabel=record.highlight?'取消高亮':'标记高亮';
  return `<button class="icon-button bare" data-action="highlight" aria-label="${starLabel}" title="${starLabel}" aria-pressed="${record.highlight}">${icon('star')}</button>`;
 }
+function deepEditor(record,index){
+ const options=(fields,offset)=>fields.map((field,step)=>`<option value="${step+offset}"${index===step+offset?' selected':''}>${field[1]}</option>`).join('');
+ return `<label class="pair-field">当前提示<select id="deep-step"><optgroup label="如实记录">${options(dayCaptureFields,0)}</optgroup><optgroup label="回看与发现">${options(dayReviewFields,dayCaptureFields.length)}</optgroup></select></label>${fieldMarkup(dayFields[index],record)}${index<dayFields.length-1?'<div class="entry-footer"><button class="button text" data-action="deep-next">下一项</button></div>':''}`;
+}
 function dayBoard(){
  const records=currentRecords();
+ if(activeNote){
+  const {index,mode}=activeNote;
+  const record=records[index];
+  const ref=reference('day',keyNow(),record.id);
+  const reflecting=mode==='reflect';
+  const deep=mode==='deep';
+  const editor=reflecting?perspectivesMarkup(record):deep?deepEditor(record,activeNote.step):fieldMarkup(['event','有感触的事','记下发生了什么，再写一句感受或发现。','比如：散步时孩子主动说了 bench，我有点惊喜。'],record);
+  const controls=mode!=='write'?'':`<div class="entry-footer"><button class="button text" data-action="reflect-note">${icon('spark')}换个角度</button><button class="button text" data-action="deep-note">深入复盘</button><button class="button text" data-action="link">${icon('link')}联结</button>${hasContent(record)?wrapIconButton('delete','trash','删除此条记录'):''}</div>`;
+  return `<article class="composer-screen" id="entry-${escapeHtml(ref)}" data-record="${escapeHtml(ref)}">
+   <div class="composer-head">${wrapIconButton('close-note','back',mode==='write'?'返回日复盘':'返回简记')}<h1>${reflecting?'换个角度':deep?'深入复盘':'写第 '+(index+1)+' 条'}</h1></div>
+   <div class="composer-panel glass">${editor}${controls}${mode==='write'?linksMarkup(record):''}<p class="draft-status" id="draft-status">${hasContent(record)?'内容会自动保存':'写一句就可以'}</p></div>
+   <button class="button primary" data-action="finish-note">${icon('check')}${reflecting?'保存补记':deep?'完成回看':'记下这一条'}</button>
+  </article>`;
+ }
  const cards=Array.from({length:Math.max(3,records.length)},(_,index)=>{
   const record=records[index];
   const ref=record?reference('day',keyNow(),record.id):'';
-  const opened=activeNote?.index===index;
   const saved=record&&hasContent(record);
   const name=`第 ${index+1} 条`;
   const note=record?.fields.event?.trim()??'';
   const preview=saved?`<span class="written">${escapeHtml(note||short(Object.values(record.fields).find(value=>value.trim())||'关联记录'))}</span>`:'';
   const title=saved?name:`写${name}`;
-  const controls=saved&&!opened?starButton(record):'';
-  let content='';
-  if(opened){
-   const reflecting=activeNote.mode==='reflect';
-   const editor=reflecting?perspectivesMarkup(record):fieldMarkup(['event','有感触的事','','比如：散步时孩子主动说了 bench，我有点惊喜。'],record);
-   content=`<div class="note-compose">${editor}<button class="button primary" data-action="finish-note">${icon('check')}${reflecting?'完成回看':'记下这一条'}</button>${saved&&!reflecting?`<div class="entry-footer"><button class="button text" data-action="reflect-note">${icon('spark')}换个角度</button><button class="button text" data-action="link">${icon('link')}联结</button>${wrapIconButton('delete','trash','删除此条记录')}</div>`:''}${reflecting?'':linksMarkup(record)}</div>`;
-  }else if(saved&&record.fields.perspectiveNote?.trim()){
-   content=`<details class="note-extra"><summary>${icon('down')}回看补记</summary>${readPerspective(record)}</details>`;
-  }
-  return `<article class="note-card${record?.highlight?' is-highlight':''}${opened?' active-note':''}" ${record?`id="${escapeHtml('entry-'+ref)}" data-record="${escapeHtml(ref)}"`:''}><div class="note-line"><button class="note-open" data-action="open-note" data-index="${index}" aria-expanded="${opened}"><span class="note-index" aria-hidden="true">${index+1}</span><span class="note-copy"><strong>${title}</strong>${opened?'':preview}</span></button>${controls}</div>${content}</article>`;
+  return `<article class="note-card${record?.highlight?' is-highlight':''}" ${record?`id="${escapeHtml('entry-'+ref)}" data-record="${escapeHtml(ref)}"`:''}><div class="note-line"><button class="note-open" data-action="open-note" data-index="${index}"><span class="note-index" aria-hidden="true">${index+1}</span><span class="note-copy"><strong>${title}</strong>${preview}</span></button>${saved?starButton(record):''}</div></article>`;
  });
- return `<section class="note-board" aria-label="当天的记录">${cards.join('')}</section>`;
+ return `<section class="note-board" aria-label="当天的记录">${cards.join('')}</section><div class="day-overview-action"><button class="button glass" data-action="open-overview">${icon('book')}日复盘总览</button></div>`;
 }
 function summaryEditor(record){
  const ref=reference(type,keyNow());
  const stepFields=type==='week'?[null,...weekFields]:monthFields;
  const steps=stepFields.map((field,index)=>{
   const open=!summaryLens&&activeStep===index;
-  const label=field?field[1].split(' · ')[0]:'聚焦与联结';
+  const label=field?field[1].split(' · ')[0]:'聚焦';
   const written=field?record.fields[field[0]]?.trim():weekFocus(record,keyNow()).length>0;
   const state=written?(field?short(written,42):'已挑选本周重点'):(field?'待记录':'挑选本周最重要的三条日记');
-  const editor=field?fieldMarkup(field,record):weekSelection(record);
+  const editor=field?(type==='week'&&index===1?weekConnections(record,weekFocus(record,keyNow()),{editing:true}):'')+fieldMarkup(field,record):weekSelection(record);
   const next=index<stepFields.length-1?`<div class="step-next"><button class="button text" data-action="step" data-index="${index+1}">下一项</button></div>`:'';
   return `<section class="step-item${open?' open':''}"><button class="step-open" data-action="step" data-index="${index}" aria-expanded="${open}"><span class="note-index" aria-hidden="true">${written?icon('check'):index+1}</span><span class="step-copy"><strong>${label}</strong>${open?'':`<small>${escapeHtml(state)}</small>`}</span>${icon('down','chev')}</button>${open?`<div class="step-inner">${editor}${next}</div>`:''}</section>`;
  });
@@ -308,6 +439,7 @@ function summaryEditor(record){
  return `<article class="card entry${record.highlight?' is-highlight':''}" id="entry-${ref}" data-record="${ref}"><div class="entry-head"><h3 tabindex="-1">${type==='week'?'本周记录':'本月记录'}</h3><div class="tools">${starButton(record)}</div></div><div class="summary-card"><div class="step-list">${steps.join('')}</div><div class="entry-footer">${monthLinks}<button class="button" data-action="perspective" aria-expanded="${summaryLens}">${icon('spark')}视角切换</button></div>${summaryLens?perspectivesMarkup(record):''}${type==='month'?linksMarkup(record):''}</div></article><div class="actions"><button class="button primary" data-action="save">${icon('check')}完成并回看</button></div>`;
 }
 function renderEditor(){
+ document.body.dataset.composing=type==='day'&&activeNote?'true':'false';
  $('editor').innerHTML=type==='day'?dayBoard():summaryEditor(currentRecords()[0]);
 }
 function openDayNote(index){
@@ -315,7 +447,7 @@ function openDayNote(index){
  while(records.length<=index)records.push(emptyRecord(uid()));
  activeNote={index,mode:'write'};
  renderEditor();
- $('editor').querySelector('.active-note textarea').focus();
+ $('editor').querySelector('.composer-panel textarea').focus();
 }
 function focusDayNote(index){
  $('editor').querySelector(`[data-action="open-note"][data-index="${index}"]`)?.focus({preventScroll:true});
@@ -374,7 +506,8 @@ function renderOverview(){
  const hasOverview=records.length||hasPeriodNotes;
  const contents=hasOverview?(records.length?records:allRecords).map(summarize).join(''):
   '<div class="overview-blank"><p class="empty">这段时间还没有内容。写下第一条记录后，就能在这里回看。</p><button class="button primary" data-action="start-writing">开始填写</button></div>';
- $('editor').innerHTML=`<section class="overview" aria-labelledby="overview-title"><div class="overview-header"><h2 id="overview-title">${meta[type].label}总览</h2><span>${type==='day'?records.length+' 条片段':periodTitle(type,key)}</span></div><div class="overview-body">${contents}</div></section>`;
+ const back=type==='day'&&records.length?'<div class="overview-return"><button class="button primary" data-action="back-to-board">继续记录</button></div>':'';
+ $('editor').innerHTML=`<section class="overview" aria-labelledby="overview-title"><div class="overview-header"><h2 id="overview-title" tabindex="-1">${meta[type].label}总览</h2><span>${type==='day'?records.length+' 条片段':periodTitle(type,key)}</span></div><div class="overview-body">${contents}</div>${back}</section>`;
 }
 function renderArchiveItems(){
  const query=archiveQuery.trim().toLowerCase();
@@ -402,6 +535,8 @@ function renderArchive(){
 function setView(view,{focus=false}={}){
  currentView=view;
  document.body.dataset.view=view;
+ document.body.dataset.period=type;
+ document.body.dataset.composing='false';
  for(const button of $('view-switch').querySelectorAll('[data-view]'))button.setAttribute('aria-pressed',button.dataset.view===view);
  if(view==='overview')renderOverview();
  else if(view==='archive')renderArchive();
@@ -529,6 +664,12 @@ $('editor').addEventListener('input',event=>{
  const article=event.target.closest('[data-record]');
  getRecord(article.dataset.record).fields[field]=event.target.value;
  save();renderCount();
+ if($('draft-status'))$('draft-status').textContent=storageError?'当前浏览器暂时无法保存':'草稿已保存';
+});
+$('editor').addEventListener('change',event=>{
+ if(event.target.id!=='deep-step'||activeNote?.mode!=='deep')return;
+ activeNote.step=Number(event.target.value);
+ renderEditor();$('deep-step').focus();
 });
 $('editor').addEventListener('submit',event=>{
  const form=event.target.closest('[data-pair-form]');
@@ -562,9 +703,15 @@ $('editor').addEventListener('click',event=>{
  }
  if(action==='open-note'){
   const index=Number(button.dataset.index);
-  if(activeNote?.index===index){activeNote=null;renderEditor();focusDayNote(index);}
-  else openDayNote(index);
+  openDayNote(index);
   return;
+ }
+ if(action==='open-overview'){setView('overview');$('overview-title').focus();return;}
+ if(action==='back-to-board'){setView('edit');$('editor').querySelector('[data-action=open-note]')?.focus();return;}
+ if(action==='close-note'){
+  const index=activeNote.index;
+  if(activeNote.mode!=='write'){activeNote.mode='write';renderEditor();$('editor').querySelector('[data-action=deep-note]')?.focus();return;}
+  activeNote=null;renderEditor();focusDayNote(index);return;
  }
  if(action==='start-writing'){
   setView('edit');
@@ -575,15 +722,18 @@ $('editor').addEventListener('click',event=>{
  if(action==='save'){save();setView('overview',{focus:true});$('view-switch').scrollIntoView({block:'nearest'});notify(storageError?'当前浏览器无法保存':'已保存'+meta[type].label);return;}
  if(!record)return;
  if(action==='finish-note'){
-  const reflecting=activeNote.mode==='reflect';
-  if(!reflecting&&!record.fields.event?.trim()&&!hasContent(record)){
+  const writing=activeNote.mode==='write';
+  if(writing&&!record.fields.event?.trim()&&!hasContent(record)){
    notify('写下一句你想记住的事');article.querySelector('textarea').focus();return;
   }
   const index=activeNote.index;
   activeNote=null;save();renderEditor();renderCount();focusDayNote(index);
-  notify(storageError?'当前浏览器无法保存':reflecting?'回看已保存':'已记下这一条');
+  notify(storageError?'当前浏览器无法保存':writing?'已记下这一条':'回看已保存');
  }else if(action==='reflect-note'){
-  activeNote.mode='reflect';renderEditor();$('editor').querySelector('.active-note [data-lens]')?.focus();
+  activeNote.mode='reflect';renderEditor();$('editor').querySelector('.composer-panel [data-lens]')?.focus();
+ }else if(action==='deep-note'||action==='deep-next'){
+  activeNote.step=action==='deep-note'?0:activeNote.step+1;
+  activeNote.mode='deep';renderEditor();$('deep-step').focus();
  }else if(action==='step'){
   const index=Number(button.dataset.index);
   activeStep=activeStep===index&&!summaryLens?-1:index;
