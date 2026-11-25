@@ -893,7 +893,8 @@
     }
     let state = loadState();
     // Use a project URL and public publishable key. Server-side keys never belong here.
-    const CLOUD_CONFIG = { url: '', publishableKey: '' };
+    const CLOUD_CONFIG = {"url": "https://rhuxofzklcqfozmjfmai.supabase.co", "publishableKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJodXhvZnprbGNxZm96bWpmbWFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ4MTk5MTAsImV4cCI6MjExMDM5NTkxMH0.gjJovYxrMnQaEVDt-tLqdj3A25ski5Y66HtfhAFoRPs"};
+    const READING_ACCOUNT_SUFFIX = '@accounts.winky-reading-shelf.pages.dev';
     const RECORD_FIELDS = ['moments', 'weekLinks', 'weekSummaries', 'months', 'monthTraces', 'monthLinks'];
     let cloud = null;
     let account = null;
@@ -995,11 +996,13 @@
           <div class="sheet-title">云端账号</div>
           <button class="sheet-close" id="closeSheetBtn" aria-label="关闭">✕</button>
         </div>
-        ${account ? `<p>${escapeHtml(account.email)}</p>` : `
+        ${account ? `<p>${escapeHtml(account.email?.replace(READING_ACCOUNT_SUFFIX, ''))}</p>` : `
           <form id="cloudLoginForm">
-            <label class="field-label" for="cloudEmail">邮箱</label>
-            <input class="soft-input" id="cloudEmail" type="email" autocomplete="email" required>
-            <button class="primary-btn" type="submit">发送登录链接</button>
+            <label class="field-label" for="cloudLogin">阅读书架账号或邮箱</label>
+            <input class="soft-input" id="cloudLogin" autocomplete="username" autocapitalize="none" required>
+            <label class="field-label" for="cloudPassword">密码</label>
+            <input class="soft-input" id="cloudPassword" type="password" autocomplete="current-password" required>
+            <button class="primary-btn" type="submit">登录</button>
           </form>`}
         ${conflict ? '<p>其他设备已修改云端记录。本设备的修改已保留，可下载后核对。</p><button class="pill-action" id="exportCloudDraft">下载本设备修改</button><button class="pill-action" id="readLatestCloud">读取云端版本</button>' : ''}
         <p id="cloudFeedback" role="status"></p>
@@ -1015,14 +1018,24 @@
         const button = form.querySelector('button');
         button.disabled = true;
         try {
-          const { error } = await cloud.auth.signInWithOtp({
-            email: document.getElementById('cloudEmail').value.trim(),
-            options: { emailRedirectTo: location.origin + location.pathname }
-          });
-          if (error) throw error;
-          feedback.textContent = '请打开邮箱里的登录链接。';
+          const login = document.getElementById('cloudLogin').value.trim().toLowerCase();
+          const email = login.includes('@') ? login : login + READING_ACCOUNT_SUFFIX;
+          const password = document.getElementById('cloudPassword').value;
+          const { data, error } = await cloud.auth.signInWithPassword({ email, password });
+          if (error || !data.session) {
+            feedback.textContent = error?.code === 'invalid_credentials' ? '账号或密码不正确。' : '登录失败，请稍后重试。';
+            return;
+          }
+          try {
+            await openCloudNotebook(data.session);
+            closeSheet();
+          } catch {
+            openCloudAccount();
+            document.getElementById('cloudFeedback').textContent = '已登录，暂时无法读取云端记录。';
+            cloudButton.textContent = '云端连接失败';
+          }
         } catch {
-          feedback.textContent = '登录链接发送失败，请稍后再试。';
+          feedback.textContent = '登录失败，请稍后重试。';
         } finally {
           button.disabled = false;
         }
@@ -1070,7 +1083,7 @@
       const signOut = document.getElementById('signOutCloud');
       if (signOut) signOut.onclick = async () => {
         if (syncing) { feedback.textContent = '正在保存，请稍后退出。'; return; }
-        const { error } = await cloud.auth.signOut();
+        const { error } = await cloud.auth.signOut({ scope: 'local' });
         if (error) { feedback.textContent = '退出失败，请稍后重试。'; return; }
         location.reload();
       };
@@ -1084,7 +1097,9 @@
       cloudButton.disabled = true;
       try {
         const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2.119.2?bundle');
-        cloud = createClient(CLOUD_CONFIG.url, CLOUD_CONFIG.publishableKey);
+        cloud = createClient(CLOUD_CONFIG.url, CLOUD_CONFIG.publishableKey, {
+          auth: { storageKey: 'reflection-notebook-auth-v1', detectSessionInUrl: false }
+        });
         const { data, error } = await cloud.auth.getSession();
         if (error) throw error;
         if (data.session) await openCloudNotebook(data.session);
