@@ -526,6 +526,42 @@
     .sheet-title { font-size: 16.5px; font-weight: 700; color: var(--text-primary); }
     .sheet-close { width: 28px; height: 28px; border-radius: 50%; border: none; background: #EAEBEF; color: #5A5E68; display: flex; align-items: center; justify-content: center; cursor: pointer; }
 
+
+    .sheet-panel:has(.cloud-login) {
+      background: #FCFCFD;
+      padding: 10px clamp(18px, 6.5vw, 30px) calc(26px + var(--safe-bottom));
+    }
+    .cloud-login { padding-top: 5px; }
+    .cloud-login-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+    .cloud-login-title { font-size: 28px; line-height: 1.2; font-weight: 700; letter-spacing: -.03em; }
+    .cloud-login-intro { margin: 8px 0 24px; color: #555C69; font-size: 14px; line-height: 1.5; }
+    .cloud-login-dismiss { width: 44px; height: 44px; flex: 0 0 44px; background: #EFF1F4; margin-top: -4px; }
+    .cloud-login-form { display: grid; gap: 15px; }
+    .cloud-login-field { display: grid; gap: 7px; min-width: 0; }
+    .cloud-login-field label { font-size: 14px; font-weight: 600; }
+    .cloud-login-field .soft-input {
+      min-height: 50px; padding: 11px 13px; font-size: 16px;
+      background: #FFF; border-color: #D8DDE5; caret-color: #28486D;
+    }
+    .cloud-login-field .soft-input:focus { border-color: #3B76B8; outline: 2px solid #B4CDE7; outline-offset: 1px; }
+    .cloud-login-password { position: relative; }
+    .cloud-login-password .soft-input { padding-right: 64px; }
+    .cloud-login-reveal {
+      position: absolute; top: 3px; right: 4px; height: 44px; min-width: 54px;
+      border: 0; border-radius: 8px; background: transparent; color: #31577D;
+      font: inherit; font-size: 13px; cursor: pointer;
+    }
+    .primary-btn.cloud-login-submit { min-height: 50px; margin: 3px 0 0; background: #243D59; border-radius: 12px; }
+    .cloud-login-submit:hover { background: #182D44; }
+    .cloud-login-submit:disabled { cursor: wait; opacity: .68; }
+    .cloud-login-note { text-align: center; font-size: 13px; line-height: 1.5; color: #555C69; margin-top: 13px; }
+    .cloud-login-feedback { font-size: 13px; line-height: 1.45; color: #90413E; }
+    .cloud-login-feedback:not(:empty) { margin: 11px 0 0; }
+    .cloud-login button:focus-visible { outline: 2px solid #366B9E; outline-offset: 3px; }
+    @media (prefers-reduced-motion: reduce) {
+      .sheet-panel:has(.cloud-login), .sheet-backdrop:has(.cloud-login) { transition: none; }
+    }
+
     .mood-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 12px; }
     .mood-item { border: 1.4px solid transparent; background: #FFFFFF; border-radius: 14px; padding: 9px 4px; display: flex; flex-direction: column; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 600; color: #4A4E59; cursor: pointer; box-shadow: var(--shadow-card); }
     .mood-item.selected { border-color: var(--text-primary); }
@@ -693,7 +729,7 @@
         </button>
       </div>
 
-      <div class="sheet-backdrop" id="sheetBackdrop">
+      <div class="sheet-backdrop" id="sheetBackdrop" inert>
         <div class="sheet-panel">
           <div class="sheet-handle"></div>
           <div id="sheetBody"></div>
@@ -992,20 +1028,39 @@
         localRecords.monthTraces.length || localRecords.months.some(row => row.mind.length || row.action.length || row.result.length || row.note)
       );
       openSheet(`
-        <div class="sheet-head">
-          <div class="sheet-title">云端账号</div>
-          <button class="sheet-close" id="closeSheetBtn" aria-label="关闭">✕</button>
-        </div>
-        ${account ? `<p>${escapeHtml(account.email?.replace(READING_ACCOUNT_SUFFIX, ''))}</p>` : `
-          <form id="cloudLoginForm">
-            <label class="field-label" for="cloudLogin">阅读书架账号或邮箱</label>
-            <input class="soft-input" id="cloudLogin" autocomplete="username" autocapitalize="none" required>
-            <label class="field-label" for="cloudPassword">密码</label>
-            <input class="soft-input" id="cloudPassword" type="password" autocomplete="current-password" required>
-            <button class="primary-btn" type="submit">登录</button>
-          </form>`}
+        ${account ? `
+          <div class="sheet-head">
+            <div class="sheet-title">云端账号</div>
+            <button class="sheet-close" id="closeSheetBtn" aria-label="关闭">✕</button>
+          </div>
+          <p>${escapeHtml(account.email?.replace(READING_ACCOUNT_SUFFIX, ''))}</p>
+        ` : `
+          <section class="cloud-login" role="dialog" aria-modal="true" aria-labelledby="cloudLoginTitle">
+            <div class="cloud-login-head">
+              <h2 class="cloud-login-title" id="cloudLoginTitle" tabindex="-1">登录云端</h2>
+              <button type="button" class="sheet-close cloud-login-dismiss" id="closeSheetBtn" aria-label="关闭">✕</button>
+            </div>
+            <p class="cloud-login-intro">使用阅读书架账号同步复盘记录。</p>
+            <form class="cloud-login-form" id="cloudLoginForm" autocomplete="on">
+              <div class="cloud-login-field">
+                <label for="cloudLogin">账号或邮箱</label>
+                <input class="soft-input" id="cloudLogin" name="username" autocomplete="username"
+                  autocapitalize="none" spellcheck="false" required>
+              </div>
+              <div class="cloud-login-field">
+                <label for="cloudPassword">密码</label>
+                <div class="cloud-login-password">
+                  <input class="soft-input" id="cloudPassword" name="password" type="password" autocomplete="current-password" required>
+                  <button type="button" class="cloud-login-reveal" id="cloudReveal" aria-label="显示密码" aria-controls="cloudPassword" aria-pressed="false">显示</button>
+                </div>
+              </div>
+              <button class="primary-btn cloud-login-submit" type="submit">登录</button>
+            </form>
+            <p class="cloud-login-feedback" id="cloudFeedback" role="status"></p>
+            <p class="cloud-login-note">此浏览器会保持登录</p>
+          </section>`}
         ${conflict ? '<p>其他设备已修改云端记录。本设备的修改已保留，可下载后核对。</p><button class="pill-action" id="exportCloudDraft">下载本设备修改</button><button class="pill-action" id="readLatestCloud">读取云端版本</button>' : ''}
-        <p id="cloudFeedback" role="status"></p>
+        ${account ? '<p id="cloudFeedback" role="status"></p>' : ''}
         ${account && !conflict && (!ready || changedSinceSync()) ? '<button class="pill-action" id="retryCloud">重试同步</button>' : ''}
         ${canImport ? '<button class="pill-action" id="importLocalRecords">导入此浏览器的记录</button>' : ''}
         ${account ? '<button class="pill-action" id="signOutCloud">退出登录</button>' : ''}
@@ -1013,10 +1068,26 @@
       const feedback = document.getElementById('cloudFeedback');
       document.getElementById('closeSheetBtn').onclick = closeSheet;
       const form = document.getElementById('cloudLoginForm');
-      if (form) form.onsubmit = async event => {
+      if (form) {
+        const title = document.getElementById('cloudLoginTitle');
+        title.focus({ preventScroll: true });
+        const reveal = document.getElementById('cloudReveal');
+        const password = document.getElementById('cloudPassword');
+        reveal.onclick = () => {
+          const visible = password.type === 'password';
+          password.type = visible ? 'text' : 'password';
+          reveal.textContent = visible ? '隐藏' : '显示';
+          reveal.setAttribute('aria-pressed', String(visible));
+        };
+        form.onsubmit = signIn;
+      }
+
+      async function signIn(event) {
         event.preventDefault();
-        const button = form.querySelector('button');
+        const button = form.querySelector('[type="submit"]');
         button.disabled = true;
+        button.textContent = '正在登录…';
+        feedback.textContent = '';
         try {
           const login = document.getElementById('cloudLogin').value.trim().toLowerCase();
           const email = login.includes('@') ? login : login + READING_ACCOUNT_SUFFIX;
@@ -1029,6 +1100,7 @@
           try {
             await openCloudNotebook(data.session);
             closeSheet();
+            form.remove();
           } catch {
             openCloudAccount();
             document.getElementById('cloudFeedback').textContent = '已登录，暂时无法读取云端记录。';
@@ -1038,8 +1110,9 @@
           feedback.textContent = '登录失败，请稍后重试。';
         } finally {
           button.disabled = false;
+          button.textContent = '登录';
         }
-      };
+      }
       const retry = document.getElementById('retryCloud');
       if (retry) retry.onclick = async () => {
         closeSheet();
@@ -1098,7 +1171,12 @@
       try {
         const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2.119.2?bundle');
         cloud = createClient(CLOUD_CONFIG.url, CLOUD_CONFIG.publishableKey, {
-          auth: { storageKey: 'reflection-notebook-auth-v1', detectSessionInUrl: false }
+          auth: {
+            storageKey: 'reflection-notebook-auth-v1',
+            persistSession: true,
+            autoRefreshToken: true,
+            detectSessionInUrl: false
+          }
         });
         const { data, error } = await cloud.auth.getSession();
         if (error) throw error;
@@ -2170,8 +2248,35 @@
 
     const sheetBackdrop = document.getElementById('sheetBackdrop');
     const sheetBody = document.getElementById('sheetBody');
-    function openSheet(html) { sheetBody.innerHTML = html; sheetBackdrop.classList.add('open'); }
-    function closeSheet() { sheetBackdrop.classList.remove('open'); }
+    function openSheet(html) {
+      sheetBody.innerHTML = html;
+      sheetBackdrop.inert = false;
+      sheetBackdrop.classList.add('open');
+    }
+    function closeSheet() {
+      sheetBackdrop.classList.remove('open');
+      sheetBackdrop.inert = true;
+      if (sheetBody.querySelector('.cloud-login')) cloudButton.focus({ preventScroll: true });
+    }
+    sheetBackdrop.addEventListener('keydown', event => {
+      const login = sheetBody.querySelector('.cloud-login');
+      if (!login || !sheetBackdrop.classList.contains('open')) return;
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        closeSheet();
+      }
+      if (event.key !== 'Tab') return;
+      const controls = [...login.querySelectorAll('input, button:not(:disabled)')];
+      const first = controls[0];
+      const last = controls.at(-1);
+      if (event.shiftKey && (document.activeElement === first || document.activeElement.id === 'cloudLoginTitle')) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    });
     sheetBackdrop.addEventListener('click', e => { if (e.target === sheetBackdrop) closeSheet(); });
 
     function openQuickRecordSheet(presetTech = null) {
