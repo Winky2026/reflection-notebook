@@ -558,6 +558,22 @@
     .cloud-login-feedback { font-size: 13px; line-height: 1.45; color: #90413E; }
     .cloud-login-feedback:not(:empty) { margin: 11px 0 0; }
     .cloud-login button:focus-visible { outline: 2px solid #366B9E; outline-offset: 3px; }
+
+    .cloud-account .cloud-login-head { align-items: center; }
+    .cloud-account-identity {
+      margin: 12px 0 23px; color: #555C69; font-size: 15px; line-height: 1.5; overflow-wrap: anywhere;
+    }
+    .cloud-account-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+    .cloud-account-actions button {
+      min-height: 44px; padding: 10px 16px; border-radius: 10px;
+      font-size: 14px; font-weight: 600; cursor: pointer;
+    }
+    .cloud-account-actions .cloud-account-change { background: #243D59; border: 1px solid #243D59; color: #FFF; }
+    .cloud-account-actions .cloud-account-secondary { background: transparent; border: 1px solid #D8DDE5; color: #414A59; }
+    .cloud-account-notice { margin: 0 0 14px; color: #555C69; font-size: 14px; line-height: 1.5; }
+    .cloud-account .cloud-login-feedback[data-success="true"] { color: #28634F; }
+    .cloud-password-panel .cloud-login-intro { margin-bottom: 18px; }
+    .cloud-password-panel .cloud-login-form { gap: 12px; }
     @media (prefers-reduced-motion: reduce) {
       .sheet-panel:has(.cloud-login), .sheet-backdrop:has(.cloud-login) { transition: none; }
     }
@@ -1021,7 +1037,7 @@
       switchTab('daily');
     }
 
-    function openCloudAccount() {
+    function openCloudAccount(message = '') {
       const localRecords = loadState();
       const canImport = ready && !cloudRevision && !changedSinceSync() && (
         localRecords.moments.length || localRecords.weekSummaries.length || localRecords.monthLinks.length ||
@@ -1029,11 +1045,22 @@
       );
       openSheet(`
         ${account ? `
-          <div class="sheet-head">
-            <div class="sheet-title">云端账号</div>
-            <button class="sheet-close" id="closeSheetBtn" aria-label="关闭">✕</button>
-          </div>
-          <p>${escapeHtml(account.email?.replace(READING_ACCOUNT_SUFFIX, ''))}</p>
+          <section class="cloud-login cloud-account" role="dialog" aria-modal="true" aria-labelledby="cloudLoginTitle">
+            <div class="cloud-login-head">
+              <h2 class="cloud-login-title" id="cloudLoginTitle" tabindex="-1">云端账号</h2>
+              <button type="button" class="sheet-close cloud-login-dismiss" id="closeSheetBtn" aria-label="关闭">✕</button>
+            </div>
+            <p class="cloud-account-identity">${escapeHtml(account.email?.replace(READING_ACCOUNT_SUFFIX, ''))}</p>
+            ${conflict ? '<p class="cloud-account-notice">其他设备已修改云端记录。本设备的修改已保留，可下载后核对。</p>' : ''}
+            <div class="cloud-account-actions">
+              <button type="button" class="cloud-account-change" id="changeCloudPassword">修改密码</button>
+              ${conflict ? '<button class="cloud-account-secondary" id="exportCloudDraft">下载本设备修改</button><button class="cloud-account-secondary" id="readLatestCloud">读取云端版本</button>' : ''}
+              ${!conflict && (!ready || changedSinceSync()) ? '<button class="cloud-account-secondary" id="retryCloud">重试同步</button>' : ''}
+              ${canImport ? '<button class="cloud-account-secondary" id="importLocalRecords">导入此浏览器的记录</button>' : ''}
+              <button type="button" class="cloud-account-secondary" id="signOutCloud">退出登录</button>
+            </div>
+            <p class="cloud-login-feedback" id="cloudFeedback" role="status">${typeof message === 'string' ? escapeHtml(message) : ''}</p>
+          </section>
         ` : `
           <section class="cloud-login" role="dialog" aria-modal="true" aria-labelledby="cloudLoginTitle">
             <div class="cloud-login-head">
@@ -1059,18 +1086,15 @@
             <p class="cloud-login-feedback" id="cloudFeedback" role="status"></p>
             <p class="cloud-login-note">此浏览器会保持登录</p>
           </section>`}
-        ${conflict ? '<p>其他设备已修改云端记录。本设备的修改已保留，可下载后核对。</p><button class="pill-action" id="exportCloudDraft">下载本设备修改</button><button class="pill-action" id="readLatestCloud">读取云端版本</button>' : ''}
-        ${account ? '<p id="cloudFeedback" role="status"></p>' : ''}
-        ${account && !conflict && (!ready || changedSinceSync()) ? '<button class="pill-action" id="retryCloud">重试同步</button>' : ''}
-        ${canImport ? '<button class="pill-action" id="importLocalRecords">导入此浏览器的记录</button>' : ''}
-        ${account ? '<button class="pill-action" id="signOutCloud">退出登录</button>' : ''}
       `);
       const feedback = document.getElementById('cloudFeedback');
       document.getElementById('closeSheetBtn').onclick = closeSheet;
+      document.getElementById('cloudLoginTitle').focus({ preventScroll: true });
+      if (typeof message === 'string' && message) feedback.dataset.success = 'true';
+      const changePassword = document.getElementById('changeCloudPassword');
+      if (changePassword) changePassword.onclick = openCloudPasswordSheet;
       const form = document.getElementById('cloudLoginForm');
       if (form) {
-        const title = document.getElementById('cloudLoginTitle');
-        title.focus({ preventScroll: true });
         const reveal = document.getElementById('cloudReveal');
         const password = document.getElementById('cloudPassword');
         reveal.onclick = () => {
@@ -1159,6 +1183,87 @@
         const { error } = await cloud.auth.signOut({ scope: 'local' });
         if (error) { feedback.textContent = '退出失败，请稍后重试。'; return; }
         location.reload();
+      };
+    }
+
+    function openCloudPasswordSheet() {
+      const currentAccount = account;
+      if (!currentAccount?.email) return;
+      openSheet(`
+        <section class="cloud-login cloud-password-panel" role="dialog" aria-modal="true" aria-labelledby="cloudLoginTitle">
+          <div class="cloud-login-head">
+            <h2 class="cloud-login-title" id="cloudLoginTitle" tabindex="-1">修改密码</h2>
+            <button type="button" class="sheet-close cloud-login-dismiss" id="closeSheetBtn" aria-label="关闭">✕</button>
+          </div>
+          <p class="cloud-login-intro">新密码也用于登录阅读书架。</p>
+          <form class="cloud-login-form" id="cloudPasswordForm" autocomplete="on">
+            <input type="text" name="username" autocomplete="username" value="${escapeHtml(currentAccount.email.replace(READING_ACCOUNT_SUFFIX, ''))}" hidden>
+            <div class="cloud-login-field">
+              <label for="cloudCurrentPassword">当前密码</label>
+              <input class="soft-input" id="cloudCurrentPassword" name="current-password" type="password" autocomplete="current-password" required>
+            </div>
+            <div class="cloud-login-field">
+              <label for="cloudNewPassword">新密码（至少 12 位）</label>
+              <input class="soft-input" id="cloudNewPassword" name="new-password" type="password" autocomplete="new-password" minlength="12" required>
+            </div>
+            <div class="cloud-login-field">
+              <label for="cloudConfirmPassword">确认新密码</label>
+              <input class="soft-input" id="cloudConfirmPassword" name="confirm-password" type="password" autocomplete="new-password" minlength="12" required>
+            </div>
+            <button type="submit" class="primary-btn cloud-login-submit">保存新密码</button>
+          </form>
+          <p class="cloud-login-feedback" id="cloudPasswordFeedback" role="status"></p>
+        </section>
+      `);
+      document.getElementById('cloudLoginTitle').focus({ preventScroll: true });
+      document.getElementById('closeSheetBtn').onclick = closeSheet;
+      const form = document.getElementById('cloudPasswordForm');
+      const feedback = document.getElementById('cloudPasswordFeedback');
+      const current = document.getElementById('cloudCurrentPassword');
+      const next = document.getElementById('cloudNewPassword');
+      const confirmation = document.getElementById('cloudConfirmPassword');
+      const submit = form.querySelector('[type="submit"]');
+      form.onsubmit = async event => {
+        event.preventDefault();
+        const currentPassword = current.value;
+        const newPassword = next.value;
+        if (newPassword !== confirmation.value) {
+          feedback.textContent = '两次输入的新密码不一致。';
+          confirmation.focus();
+          return;
+        }
+        if (newPassword === currentPassword) {
+          feedback.textContent = '请输入与当前密码不同的新密码。';
+          next.focus();
+          return;
+        }
+        submit.disabled = true;
+        submit.textContent = '正在保存…';
+        feedback.textContent = '';
+        try {
+          const { data, error } = await cloud.auth.signInWithPassword({
+            email: currentAccount.email, password: currentPassword
+          });
+          if (error || data.user?.id !== currentAccount.id) {
+            feedback.textContent = error?.code === 'invalid_credentials' ? '当前密码不正确。' : '暂时无法核对账号，请稍后重试。';
+            return;
+          }
+          if (!form.isConnected || !sheetBackdrop.classList.contains('open')) return;
+          const result = await cloud.auth.updateUser({ password: newPassword, current_password: currentPassword });
+          if (result.error) {
+            feedback.textContent = result.error.code === 'weak_password' ? '新密码未达到账号安全要求，请换一个。' : '修改密码失败，请稍后重试。';
+            return;
+          }
+          account = result.data.user;
+          form.reset();
+          if (form.isConnected && sheetBackdrop.classList.contains('open')) openCloudAccount('密码已修改');
+          else showToast('密码已修改');
+        } catch {
+          feedback.textContent = '暂时无法修改密码，请稍后重试。';
+        } finally {
+          submit.disabled = false;
+          submit.textContent = '保存新密码';
+        }
       };
     }
 
@@ -2266,7 +2371,7 @@
         closeSheet();
       }
       if (event.key !== 'Tab') return;
-      const controls = [...login.querySelectorAll('input, button:not(:disabled)')];
+      const controls = [...login.querySelectorAll('input:not([hidden]), button:not(:disabled)')];
       const first = controls[0];
       const last = controls.at(-1);
       if (event.shiftKey && (document.activeElement === first || document.activeElement.id === 'cloudLoginTitle')) {
