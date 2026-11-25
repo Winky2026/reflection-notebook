@@ -86,6 +86,8 @@
     }
     .status-icons { display: flex; align-items: center; gap: 6px; }
 
+    .cloud-bar { display: flex; justify-content: flex-end; padding: 0 18px; }
+    .cloud-bar:has(button[hidden]) { display: none; }
     .app-scroll {
       flex: 1; overflow-y: auto; overflow-x: hidden;
       padding: 12px 20px calc(122px + var(--safe-bottom));
@@ -578,13 +580,14 @@
         </div>
       </div>
 
+      <div class="cloud-bar"><button type="button" class="pill-action" id="cloudAccountBtn" hidden>连接云端</button></div>
       <main class="app-scroll" id="appScroll">
         <!-- TAB 1: 每日 -->
         <section class="tab-page active" id="page-daily">
           <div class="page-header">
             <h1 class="page-title">复盘自己</h1>
             <button type="button" class="date-picker-btn" id="openCalendarBtn">
-              <span id="dailyHeaderMeta">2026年4月</span>
+              <span id="dailyHeaderMeta"></span>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg>
             </button>
           </div>
@@ -700,7 +703,8 @@
   </div>
 
   <script>
-    const STORAGE_KEY = 'fupan_ziji_tables_v8';
+    const STORAGE_KEY = 'fupan_ziji_tables_v9';
+    const LEGACY_STORAGE_KEY = 'fupan_ziji_tables_v8';
 
     // 原书图4-7：抽象化三阶段八层级
     const ABSTRACT_STAGES = [
@@ -764,7 +768,7 @@
     ];
 
     // 真实日历工具（支持任意历史/未来日期与按周切换）
-    const TODAY_ISO = '2026-04-23';
+    function todayIso() { return toIso(new Date()); }
     const DOW_META = [
       { dow: 'MON', short: 'M' }, { dow: 'TUES', short: 'T' }, { dow: 'WED', short: 'W' },
       { dow: 'THUR', short: 'T' }, { dow: 'FRI', short: 'F' }, { dow: 'SAT', short: 'S' }, { dow: 'SUN', short: 'S' }
@@ -800,134 +804,85 @@
           short: DOW_META[i].short,
           num: cur.getDate(),
           label: `${cur.getMonth() + 1}月${cur.getDate()}日`,
-          isToday: id === TODAY_ISO
+          isToday: id === todayIso()
         };
       });
     }
 
+    function emptyMonths() {
+      return Array.from({ length: 12 }, (_, i) => ({
+        m: i + 1, mind: [], action: [], result: [], note: ''
+      }));
+    }
+
     const DEFAULT_STATE = {
-      selectedDay: '2026-04-23',
+      selectedDay: todayIso(),
       activeTab: 'daily',
       weekMode: 'focus',
       monthTraceFilter: 'all',
-      activeLinkTrace: 'media',
+      activeLinkTrace: 'ungrouped',
       monthLinkMode: false,
-      moments: [
-        {
-          id: 'd1', dayId: '2026-04-23', time: '10:30', mood: 'joy',
-          event: '一位客户对我说：“有你们，我放心。”',
-          pastThought: '我再次意识到，我们的工作之所以能被信任，是因为客户在意“我们”是谁（几乎都是回头客）。',
-          pastAction: '无',
-          pastResult: '无',
-          reframeThought: '市面上越来越多的建筑公司只做代理业务，但我不喜欢那样。',
-          nextAction: '将来如果真的要继承父亲的公司，我希望继续保持“依靠个人魅力获得客户信赖”的工作风格。',
-          expectedResult: '（结果有待后续观察）',
-          focused: false
-        },
-        {
-          id: 'd2', dayId: '2026-04-23', time: '14:15', mood: 'flow',
-          event: '公司决定在全体大会让我介绍工作坊',
-          pastThought: '平冈先生说多亏了我的领导力工作坊他有了很大改变，听到安排分享既开心又有点紧张。',
-          pastAction: '整理上周工作坊的反馈笔记。',
-          pastResult: '获得了团队更多关注。',
-          reframeThought: '举办工作坊并带动大家改变，也许正是我最擅长的强项。',
-          nextAction: '认真准备全体大会分享，把工作坊的价值清晰讲出来。',
-          expectedResult: '让更多部门看见我的强项，带来新合作机会。',
-          focused: true
-        },
-        // 本周（4/20 周一 ~ 4/26 周日，自然周完整对齐）
-        { id: 'w1', dayId: '2026-04-20', time: '09:20', mood: 'curious', event: '想把日本独有的体验与精神语言化', pastThought: '内心有想表达的冲动。', pastAction: '记下灵感', pastResult: '思路清晰了一点', reframeThought: '', nextAction: '', expectedResult: '', focused: false },
-        { id: 'w2', dayId: '2026-04-20', time: '15:00', mood: 'joy', event: '结识澳大利亚商会一位优秀的女士', pastThought: '和优秀的人交流很受启发。', pastAction: '交换联系方式', pastResult: '建立初步联系', reframeThought: '', nextAction: '', expectedResult: '', focused: false },
-        { id: 'w3', dayId: '2026-04-20', time: '20:00', mood: 'drain', event: '对自己目前在公司的角色感到有些迷茫', pastThought: '不太确定下一步该往哪走。', pastAction: '如实写了下来', pastResult: '情绪安稳了些', reframeThought: '迷茫是重新确认方向的前兆。', nextAction: '下周找前辈聊一聊', expectedResult: '厘清长处与定位', focused: false },
-        { id: 'w4', dayId: '2026-04-21', time: '11:00', mood: 'joy', event: '高村先生送手链感谢领导力工作坊', pastThought: '真诚的付出真的被看见了。', pastAction: '表达感谢', pastResult: '更有信心', reframeThought: '工作坊带来的正向回响一直在延续。', nextAction: '', expectedResult: '', focused: false },
-        { id: 'w5', dayId: '2026-04-21', time: '19:30', mood: 'curious', event: '樱井先生说“与众不同是好事”', pastThought: '被这句话击中了。', pastAction: '记下金句', pastResult: '接纳独特性', reframeThought: '', nextAction: '', expectedResult: '', focused: false },
-        { id: 'w6', dayId: '2026-04-21', time: '21:00', mood: 'flow', event: '江藤先生构思了部门媒体策划案', pastThought: '我也想参与有创造力的内容。', pastAction: '积极讨论', pastResult: '萌生新媒体想法', reframeThought: '', nextAction: '', expectedResult: '', focused: false },
-        { id: 'w7', dayId: '2026-04-22', time: '09:00', mood: 'flow', event: 'Instagram 继续保持原有频率更新', pastThought: '持续做一件事很踏实。', pastAction: '按节奏发布', pastResult: '积累了信心', reframeThought: '', nextAction: '', expectedResult: '', focused: false },
-        { id: 'w8', dayId: '2026-04-22', time: '16:10', mood: 'drain', event: '下个月有 4 位同事离职，不能再原地踏步', pastThought: '内心有紧迫感，开始思考下一步。', pastAction: '冷静记录感受', pastResult: '决定主动规划', reframeThought: '把紧迫感转化成梳理自身优势的契机。', nextAction: '下周找小幡先生聊一聊', expectedResult: '明确下一步行动', focused: true },
-        { id: 'w9', dayId: '2026-04-22', time: '12:30', mood: 'curious', event: '和小泽先生午餐，可能共同举办讲座', pastThought: '跨界合作让人期待。', pastAction: '约了后续沟通', pastResult: '打开新可能', reframeThought: '', nextAction: '', expectedResult: '', focused: false },
-        { id: 'w10', dayId: '2026-04-24', time: '14:00', mood: 'curious', event: '收到学生演讲邀请，决定大胆讲一次', pastThought: '有点紧张但也想挑战。', pastAction: '答应邀请', pastResult: '多一次表达锻炼', reframeThought: '', nextAction: '', expectedResult: '', focused: false },
-        { id: 'w11', dayId: '2026-04-25', time: '10:30', mood: 'joy', event: '新买了白色自行车，决定每天多运动', pastThought: '生活多了一件开心的事。', pastAction: '立刻骑车出门', pastResult: '心情非常明亮', reframeThought: '', nextAction: '', expectedResult: '', focused: true },
-        { id: 'w12', dayId: '2026-04-25', time: '17:00', mood: 'flow', event: '英语测验超预期，坚持真的有力量', pastThought: '微行动真的会开花。', pastAction: '庆祝了一下', pastResult: '信心大增', reframeThought: '', nextAction: '', expectedResult: '', focused: false },
-        { id: 'w13', dayId: '2026-04-26', time: '11:00', mood: 'joy', event: '涩谷→六本木→青山畅快骑行', pastThought: '身体动起来整个人都轻盈了。', pastAction: '骑行一上午', pastResult: '精力满格', reframeThought: '', nextAction: '', expectedResult: '', focused: false },
-        // 上周（4/13 周一 ~ 4/19 周日）历史记录，方便在周度切周与月度编辑时快捷参考
-        { id: 'p1', dayId: '2026-04-15', time: '11:20', mood: 'flow', event: '正式向部门提议设立新媒体部门', pastThought: '说出口之前很忐忑，但讲完反而很轻松。', pastAction: '准备了一页方案提纲', pastResult: '大家表示愿意进一步讨论', reframeThought: '主动把想法摆上桌面，机会才会开始流动。', nextAction: '继续观察团队对新媒体的反馈', expectedResult: '推动正式立项', focused: true },
-        { id: 'p2', dayId: '2026-04-15', time: '16:45', mood: 'joy', event: '领导力工作坊结束后收到三位同事私信致谢', pastThought: '认真准备的互动环节真的打动了大家。', pastAction: '把反馈截图留存下来', pastResult: '对自己的表达更有底气', reframeThought: '', nextAction: '', expectedResult: '', focused: true },
-        { id: 'p3', dayId: '2026-04-15', time: '21:10', mood: 'curious', event: '睡前翻看 3 月笔记，发现自己变化很大', pastThought: '很多当时的焦虑回头看都已经跨过去了。', pastAction: '在笔记本上画了两条关联线', pastResult: '更相信记录的复利', reframeThought: '', nextAction: '', expectedResult: '', focused: false },
-        { id: 'p4', dayId: '2026-04-18', time: '19:00', mood: 'drain', event: '连续加班两天后肩颈酸痛，决定早点收工', pastThought: '硬撑着效率反而很低。', pastAction: '关掉电脑去泡了热水澡', pastResult: '第二天精神恢复不少', reframeThought: '照顾身体状态本身就是高产的前提。', nextAction: '每周安排两次轻运动', expectedResult: '精力更稳定', focused: false }
-      ],
-      weekLinks: [
-        { from: 'w4', to: 'd2' },
-        { from: 'w11', to: 'w13' },
-        { from: 'p1', to: 'p2' }
-      ],
-      weekSummaries: [
-        {
-          id: 's1', weekStart: '2026-04-20', level: '⑤ 优势和特长', title: '【工作坊是我的使命】',
-          body: '上周举办的领导力工作坊反响很棒，高村先生和平冈先生都给了很高评价，还被安排在全体大会分享。举办工作坊，也许正是我的强项？',
-          plan: { when: '4/27', where: '公司大会议室', who: '全体同事', what: '分享领导力工作坊经验', how: '整理3个真实改变案例做成5页PPT', budget: '¥0 · 1小时' }
-        },
-        {
-          id: 's2', weekStart: '2026-04-20', level: '② 内心最在意的事', title: '【对自己角色的迷茫 → 下一步】',
-          body: '听到几位同事即将离职的消息，或许现在是时候思考“下一步”了。为了清晰地表达自己的长处，决定下周找小幡先生聊一聊。',
-          plan: { when: '4/28', where: '青山咖啡馆', who: '小幡先生', what: '请教下一步角色定位', how: '提前写好3个最想问的问题约30分钟', budget: '¥60' }
-        },
-        {
-          id: 's3', weekStart: '2026-04-20', level: '① 自己的状态', title: '【坚持的力量】',
-          body: '一直在坚持学习英语与更新 Instagram，成绩超预期让我更有信心，今年决定继续保持这个节奏。',
-          plan: null
-        },
-        {
-          id: 's4', weekStart: '2026-04-13', level: '④ 兴趣所在', title: '【把想法提出来，机会才会流动】',
-          body: '鼓起勇气在部门提议设立新媒体小组，同时领导力工作坊好评如潮，让我确认自己适合主动推动新事物。',
-          plan: null
-        }
-      ],
-      months: [
-        { m: 1, mind: ['不喜欢总是妥协，想更自我'], action: ['举办领导力工作坊，连办3个月'], result: ['遇见北川先生，像合作伙伴'], note: '相遇是重要机会' },
-        { m: 2, mind: ['身体重要，建立调整节奏'], action: ['接受运动疗法', '加入女性社区'], result: ['课题清晰表达', '主持部门会议'], note: '2月身体易出问题' },
-        { m: 3, mind: ['他人导向与自我导向的平衡'], action: ['参加社交拓展人脉'], result: ['3个月工作坊圆满结束'], note: '工作与生活平衡', keyMind: true },
-        { m: 4, mind: ['工作坊也许是努力一生的工作'], action: ['提议设立新媒体部门'], result: ['领导力工作坊好评如潮'], note: '对职业发展迷茫', keyMind: true, keyAction: true, keyResult: true },
-        { m: 5, mind: ['发掘自己与众不同的闪光点'], action: ['努力备考英语', '坚持运动疗法'], result: ['全体大会介绍工作坊'], note: '行动起来就好' },
-        { m: 6, mind: ['接受新事物后关系变化不安'], action: ['出席SNS大会'], result: ['正式决定设立新媒体部门'], note: '行动即正义', keyResult: true },
-        { m: 7, mind: ['喜欢做概念设计，打造成强项'], action: ['新媒体启动，努力制作内容'], result: ['获团队奖', '入职满三年'], note: '创造自身价值', keyAction: true },
-        { m: 8, mind: ['不要过度迎合，培养“自我”'], action: ['去屋久岛旅行拍新照片'], result: ['新媒体获好评', '粉丝2000'], note: '更善于表达自己', keyMind: true },
-        { m: 9, mind: ['我值得', '绝对要拍视频'], action: ['发短视频，播放达3000次'], result: ['日经新闻采访新媒体部门'], note: '要增强体力', keyResult: true },
-        { m: 10, mind: ['倾听身体和内心的声音'], action: ['办第2次领导力工作坊(30人)'], result: ['接到升任经理提议'], note: '学习管理知识', keyResult: true },
-        { m: 11, mind: ['信任他人，勇敢表达自我'], action: ['实施提升新媒体访问量举措'], result: ['收到生日祝福太幸福'], note: '专注能做的事', keyMind: true },
-        { m: 12, mind: ['尝试传播文化的工作'], action: ['思考部门发展策略'], result: ['后辈小川和渡边晋升领导'], note: '把想法语言化', keyResult: true }
-      ],
-      monthTraces: [
-        { id: 'media', name: '新媒体', color: '#3B76B8' },
-        { id: 'self', name: '自我觉醒', color: '#D4886A' },
-        { id: 'workshop', name: '工作坊', color: '#3EA37E' }
-      ],
-      monthLinks: [
-        { id: 'ml1', trace: 'media', from: '4-action', to: '6-result' },
-        { id: 'ml2', trace: 'media', from: '6-result', to: '7-action' },
-        { id: 'ml3', trace: 'media', from: '7-action', to: '8-result' },
-        { id: 'ml4', trace: 'media', from: '8-result', to: '9-result' },
-        { id: 'ml5', trace: 'media', from: '9-result', to: '10-result' },
-        { id: 'ml6', trace: 'media', from: '10-result', to: '12-action' },
-        { id: 'ml7', trace: 'self', from: '3-mind', to: '8-mind' },
-        { id: 'ml8', trace: 'self', from: '8-mind', to: '11-mind' },
-        { id: 'ml9', trace: 'workshop', from: '4-mind', to: '4-result' },
-        { id: 'ml10', trace: 'workshop', from: '4-result', to: '5-result' }
-      ]
+      moments: [],
+      weekLinks: [],
+      weekSummaries: [],
+      months: emptyMonths(),
+      monthTraces: [],
+      monthLinks: []
     };
+
+    // Fingerprints of the previous bundled examples, in month and column order.
+    const LEGACY_MONTH_EXAMPLES = [[[1585142858], [3493584514], [254184012], 3097758195], [[1629159852], [4073790153, 3123257952], [2898708788, 834492917], 2409493998], [[1266061918], [4252870540], [647897726], 4228040608], [[3518536597], [2876708259], [330912828], 1481959754], [[3491733723], [1864107654, 557988748], [1817244438], 1298817819], [[155810341], [3184387455], [3455828324], 3805179178], [[1077987471], [13934666], [486787229, 3485328834], 4222162910], [[4059931848], [2757072581], [2528092544, 1008065641], 729583450], [[1890978869, 4239517548], [762516469], [2071207333], 4032573354], [[619393260], [2270696504], [1652195085], 2688313907], [[1850084961], [3931092410], [2268850406], 70525892], [[2594270390], [1804659218], [1960797827], 3450675682]];
+
+    function exampleFingerprint(text) {
+      let hash = 2166136261;
+      for (let i = 0; i < text.length; i++) hash = Math.imul(hash ^ text.charCodeAt(i), 16777619);
+      return hash >>> 0;
+    }
+
+    function stripLegacyExamples(data) {
+      data.moments = (data.moments || []).filter(item => !/^(d[12]|w(?:[1-9]|1[0-3])|p[1-4])$/.test(item.id));
+      const keptIds = new Set(data.moments.map(item => item.id));
+      data.weekLinks = (data.weekLinks || []).filter(link => keptIds.has(link.from) && keptIds.has(link.to));
+      data.weekSummaries = (data.weekSummaries || []).filter(item => !/^s[1-4]$/.test(item.id));
+      data.months = emptyMonths().map(blank => {
+        const prior = data.months?.find(row => row.m === blank.m);
+        if (!prior) return blank;
+        const row = { ...blank, ...prior };
+        ['mind', 'action', 'result', 'note'].forEach((column, index) => {
+          const sample = LEGACY_MONTH_EXAMPLES[row.m - 1][index];
+          if (Array.isArray(row[column])) {
+            const first = row[column][0];
+            row[column] = row[column].filter(value => !sample.includes(exampleFingerprint(value)));
+            if (row[column][0] !== first) delete row[`key${column[0].toUpperCase()}${column.slice(1)}`];
+          } else if (exampleFingerprint(row[column]) === sample) {
+            row[column] = '';
+          }
+        });
+        return row;
+      });
+      data.monthLinks = (data.monthLinks || []).filter(link => !/^ml(?:[1-9]|10)$/.test(link.id));
+      const keptTraces = new Set(data.monthLinks.map(link => link.trace));
+      data.monthTraces = (data.monthTraces || []).filter(trace =>
+        !['media', 'self', 'workshop'].includes(trace.id) || keptTraces.has(trace.id));
+      data.monthTraceFilter = 'all';
+      return data;
+    }
 
     function normalizeDayId(id) {
       if (/^\d{4}-\d{2}-\d{2}$/.test(id || '')) return id;
       const m = /^(\d{1,2})\/(\d{1,2})$/.exec(id || '');
-      if (m) return `2026-${String(m[1]).padStart(2, '0')}-${String(m[2]).padStart(2, '0')}`;
-      return TODAY_ISO;
+      if (m) return `${new Date().getFullYear()}-${String(m[1]).padStart(2, '0')}-${String(m[2]).padStart(2, '0')}`;
+      return todayIso();
     }
 
     function loadState() {
       try {
         const raw = localStorage.getItem(STORAGE_KEY);
-        if (!raw) return structuredClone(DEFAULT_STATE);
-        const merged = { ...structuredClone(DEFAULT_STATE), ...JSON.parse(raw), monthLinkMode: false };
-        merged.selectedDay = normalizeDayId(merged.selectedDay);
+        const previous = raw ? JSON.parse(raw) : JSON.parse(localStorage.getItem(LEGACY_STORAGE_KEY) || 'null');
+        if (!previous) return structuredClone(DEFAULT_STATE);
+        const records = raw ? previous : stripLegacyExamples(previous);
+        const merged = { ...structuredClone(DEFAULT_STATE), ...records, monthLinkMode: false };
+        merged.selectedDay = todayIso();
         if (Array.isArray(merged.moments)) {
           merged.moments = merged.moments.map(m => ({ ...m, dayId: normalizeDayId(m.dayId) }));
         }
@@ -937,7 +892,220 @@
       }
     }
     let state = loadState();
-    function saveState() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...state, monthLinkMode: false })); } catch (e) {} }
+    // Use a project URL and public publishable key. Server-side keys never belong here.
+    const CLOUD_CONFIG = { url: '', publishableKey: '' };
+    const RECORD_FIELDS = ['moments', 'weekLinks', 'weekSummaries', 'months', 'monthTraces', 'monthLinks'];
+    let cloud = null;
+    let account = null;
+    let cloudRevision = 0;
+    let lastCloudContent = '';
+    let syncing = false;
+    let ready = false;
+    let conflict = false;
+    let cloudTimer;
+    const cloudButton = document.getElementById('cloudAccountBtn');
+
+    function recordContent(data) {
+      return Object.fromEntries(RECORD_FIELDS.map(key => [key, data[key]]));
+    }
+
+    function cloudDraftKey() { return `${STORAGE_KEY}:draft:${account.id}`; }
+
+    function changedSinceSync() {
+      return JSON.stringify(recordContent(state)) !== lastCloudContent;
+    }
+
+    function queueCloudSave() {
+      if (!ready || !changedSinceSync()) return;
+      try {
+        localStorage.setItem(cloudDraftKey(), JSON.stringify({ revision: cloudRevision, content: recordContent(state) }));
+      } catch {}
+      cloudButton.textContent = conflict ? '同步冲突' : '待同步';
+      clearTimeout(cloudTimer);
+      if (!conflict) cloudTimer = setTimeout(syncCloud, 250);
+    }
+
+    async function syncCloud() {
+      if (!ready || syncing || conflict || !changedSinceSync()) return;
+      syncing = true;
+      const content = structuredClone(recordContent(state));
+      const nextRevision = cloudRevision + 1;
+      cloudButton.textContent = '同步中';
+      try {
+        const table = cloud.from('reflection_notebooks');
+        const result = cloudRevision
+          ? await table.update({ content, revision: nextRevision }).eq('owner_id', account.id).eq('revision', cloudRevision).select('revision').maybeSingle()
+          : await table.insert({ owner_id: account.id, content, revision: nextRevision }).select('revision').single();
+        if (result.error && result.error.code !== '23505') throw result.error;
+        if (!result.data) {
+          conflict = true;
+          cloudButton.textContent = '同步冲突';
+          return;
+        }
+        cloudRevision = nextRevision;
+        lastCloudContent = JSON.stringify(content);
+        if (changedSinceSync()) queueCloudSave();
+        else {
+          try { localStorage.removeItem(cloudDraftKey()); } catch {}
+          cloudButton.textContent = '已同步';
+        }
+      } catch {
+        cloudButton.textContent = '同步失败';
+      } finally {
+        syncing = false;
+      }
+    }
+
+    async function openCloudNotebook(session, { ignoreDraft = false } = {}) {
+      account = session.user;
+      ready = false;
+      const appContent = document.getElementById('appScroll');
+      const dock = document.getElementById('bottomDock').parentElement;
+      appContent.inert = true;
+      dock.inert = true;
+      const { data, error } = await cloud.from('reflection_notebooks')
+        .select('content, revision').eq('owner_id', account.id).maybeSingle();
+      if (error) throw error;
+      const content = { ...recordContent(structuredClone(DEFAULT_STATE)), ...data?.content };
+      cloudRevision = data?.revision || 0;
+      lastCloudContent = JSON.stringify(content);
+      let draft;
+      try { if (!ignoreDraft) draft = JSON.parse(localStorage.getItem(cloudDraftKey()) || 'null'); } catch {}
+      if (draft && JSON.stringify(draft.content) === lastCloudContent) {
+        try { localStorage.removeItem(cloudDraftKey()); } catch {}
+        draft = null;
+      }
+      conflict = Boolean(draft && draft.revision !== cloudRevision);
+      state = { ...structuredClone(DEFAULT_STATE), ...(draft?.content || content), selectedDay: todayIso() };
+      ready = true;
+      appContent.inert = false;
+      dock.inert = false;
+      cloudButton.textContent = conflict ? '同步冲突' : '云端';
+      switchTab('daily');
+    }
+
+    function openCloudAccount() {
+      const localRecords = loadState();
+      const canImport = ready && !cloudRevision && !changedSinceSync() && (
+        localRecords.moments.length || localRecords.weekSummaries.length || localRecords.monthLinks.length ||
+        localRecords.monthTraces.length || localRecords.months.some(row => row.mind.length || row.action.length || row.result.length || row.note)
+      );
+      openSheet(`
+        <div class="sheet-head">
+          <div class="sheet-title">云端账号</div>
+          <button class="sheet-close" id="closeSheetBtn" aria-label="关闭">✕</button>
+        </div>
+        ${account ? `<p>${escapeHtml(account.email)}</p>` : `
+          <form id="cloudLoginForm">
+            <label class="field-label" for="cloudEmail">邮箱</label>
+            <input class="soft-input" id="cloudEmail" type="email" autocomplete="email" required>
+            <button class="primary-btn" type="submit">发送登录链接</button>
+          </form>`}
+        ${conflict ? '<p>其他设备已修改云端记录。本设备的修改已保留，可下载后核对。</p><button class="pill-action" id="exportCloudDraft">下载本设备修改</button><button class="pill-action" id="readLatestCloud">读取云端版本</button>' : ''}
+        <p id="cloudFeedback" role="status"></p>
+        ${account && !conflict && (!ready || changedSinceSync()) ? '<button class="pill-action" id="retryCloud">重试同步</button>' : ''}
+        ${canImport ? '<button class="pill-action" id="importLocalRecords">导入此浏览器的记录</button>' : ''}
+        ${account ? '<button class="pill-action" id="signOutCloud">退出登录</button>' : ''}
+      `);
+      const feedback = document.getElementById('cloudFeedback');
+      document.getElementById('closeSheetBtn').onclick = closeSheet;
+      const form = document.getElementById('cloudLoginForm');
+      if (form) form.onsubmit = async event => {
+        event.preventDefault();
+        const button = form.querySelector('button');
+        button.disabled = true;
+        try {
+          const { error } = await cloud.auth.signInWithOtp({
+            email: document.getElementById('cloudEmail').value.trim(),
+            options: { emailRedirectTo: location.origin + location.pathname }
+          });
+          if (error) throw error;
+          feedback.textContent = '请打开邮箱里的登录链接。';
+        } catch {
+          feedback.textContent = '登录链接发送失败，请稍后再试。';
+        } finally {
+          button.disabled = false;
+        }
+      };
+      const retry = document.getElementById('retryCloud');
+      if (retry) retry.onclick = async () => {
+        closeSheet();
+        if (ready) await syncCloud();
+        else {
+          const { data } = await cloud.auth.getSession();
+          if (data.session) {
+            try { await openCloudNotebook(data.session); } catch { showToast('暂时无法读取云端记录'); }
+          }
+        }
+      };
+      const importButton = document.getElementById('importLocalRecords');
+      if (importButton) importButton.onclick = () => {
+        Object.assign(state, recordContent(localRecords));
+        closeSheet();
+        switchTab('daily');
+      };
+      const exportButton = document.getElementById('exportCloudDraft');
+      if (exportButton) exportButton.onclick = () => {
+        const url = URL.createObjectURL(new Blob([JSON.stringify(recordContent(state), null, 2)], { type: 'application/json' }));
+        const file = document.createElement('a');
+        file.href = url;
+        file.download = '复盘自己-本地修改.json';
+        file.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      };
+      const readLatest = document.getElementById('readLatestCloud');
+      if (readLatest) readLatest.onclick = async () => {
+        if (!confirm('当前修改将退出同步队列。请先下载需要保留的修改。')) return;
+        const key = cloudDraftKey();
+        try {
+          const { data } = await cloud.auth.getSession();
+          if (!data.session) throw new Error('No session');
+          await openCloudNotebook(data.session, { ignoreDraft: true });
+          localStorage.removeItem(key);
+          closeSheet();
+        } catch {
+          feedback.textContent = '暂时无法读取云端记录。';
+        }
+      };
+      const signOut = document.getElementById('signOutCloud');
+      if (signOut) signOut.onclick = async () => {
+        if (syncing) { feedback.textContent = '正在保存，请稍后退出。'; return; }
+        const { error } = await cloud.auth.signOut();
+        if (error) { feedback.textContent = '退出失败，请稍后重试。'; return; }
+        location.reload();
+      };
+    }
+
+    window.addEventListener('online', () => { if (ready) syncCloud(); });
+
+    async function initCloud() {
+      if (!CLOUD_CONFIG.url || !CLOUD_CONFIG.publishableKey) return;
+      cloudButton.hidden = false;
+      cloudButton.disabled = true;
+      try {
+        const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2.119.2?bundle');
+        cloud = createClient(CLOUD_CONFIG.url, CLOUD_CONFIG.publishableKey);
+        const { data, error } = await cloud.auth.getSession();
+        if (error) throw error;
+        if (data.session) await openCloudNotebook(data.session);
+        else cloudButton.textContent = '登录同步';
+        cloudButton.onclick = openCloudAccount;
+      } catch {
+        cloudButton.textContent = '云端连接失败';
+        cloudButton.onclick = cloud ? openCloudAccount : () => location.reload();
+      } finally {
+        cloudButton.disabled = false;
+      }
+    }
+
+    function saveState() {
+      if (account) {
+        queueCloudSave();
+        return;
+      }
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...state, monthLinkMode: false })); } catch {}
+    }
+
 
     let pendingWeekFrom = null;
     let pendingMonthFrom = null;
@@ -1000,7 +1168,7 @@
           const cur = new Date(gridStart.getFullYear(), gridStart.getMonth(), gridStart.getDate() + i);
           const id = toIso(cur);
           const cnt = state.moments.filter(m => m.dayId === id).length;
-          return { id, num: cur.getDate(), other: cur.getMonth() !== viewM, today: id === TODAY_ISO, selected: id === state.selectedDay, cnt };
+          return { id, num: cur.getDate(), other: cur.getMonth() !== viewM, today: id === todayIso(), selected: id === state.selectedDay, cnt };
         });
 
         openSheet(`
@@ -1035,7 +1203,7 @@
           if (targetTab === 'weekly') renderWeekly();
           else renderDaily();
         };
-        document.getElementById('calGoToday').onclick = () => applyDay(TODAY_ISO);
+        document.getElementById('calGoToday').onclick = () => applyDay(todayIso());
         document.querySelectorAll('[data-calday]').forEach(btn => {
           btn.onclick = () => applyDay(btn.dataset.calday);
         });
@@ -1046,7 +1214,7 @@
     function renderDaily() {
       renderWeekStrip();
       const curDt = parseIso(state.selectedDay);
-      const isToday = state.selectedDay === TODAY_ISO;
+      const isToday = state.selectedDay === todayIso();
       document.getElementById('dailyHeaderMeta').textContent = `${curDt.getFullYear()}年${curDt.getMonth() + 1}月`;
       document.getElementById('daySectionTitle').textContent = isToday ? '今日触动' : `${curDt.getMonth() + 1}月${curDt.getDate()}日`;
       const dayMoments = state.moments.filter(m => m.dayId === state.selectedDay);
@@ -1781,7 +1949,7 @@
         if (dt.getMonth() + 1 === mNum) ensureWeek(m.dayId).moments.push(m);
       });
       state.weekSummaries.forEach(s => {
-        const refIso = s.weekStart || TODAY_ISO;
+        const refIso = s.weekStart || todayIso();
         const dt = parseIso(refIso);
         if (dt.getMonth() + 1 === mNum) ensureWeek(refIso).summaries.push(s);
       });
@@ -2084,6 +2252,7 @@
     });
 
     switchTab(state.activeTab || 'daily');
+    initCloud();
   </script>
 </body>
 </html>
