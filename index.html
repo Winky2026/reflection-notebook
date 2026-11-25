@@ -528,52 +528,74 @@
 
 
     .sheet-panel:has(.cloud-login) {
-      background: #FCFCFD;
-      padding: 10px clamp(18px, 6.5vw, 30px) calc(26px + var(--safe-bottom));
+      background: #F9F9FB;
+      padding: 10px 18px calc(22px + var(--safe-bottom));
     }
-    .cloud-login { padding-top: 5px; }
-    .cloud-login-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
-    .cloud-login-title { font-size: 28px; line-height: 1.2; font-weight: 700; letter-spacing: -.03em; }
-    .cloud-login-intro { margin: 8px 0 24px; color: #555C69; font-size: 14px; line-height: 1.5; }
-    .cloud-login-dismiss { width: 44px; height: 44px; flex: 0 0 44px; background: #EFF1F4; margin-top: -4px; }
-    .cloud-login-form { display: grid; gap: 15px; }
-    .cloud-login-field { display: grid; gap: 7px; min-width: 0; }
-    .cloud-login-field label { font-size: 14px; font-weight: 600; }
+    .cloud-login { padding-top: 2px; }
+    .cloud-login-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+    .cloud-login-title { font-size: 16.5px; line-height: 1.3; font-weight: 700; color: var(--text-primary); }
+    .cloud-login-title:focus { outline: none; }
+    .cloud-login-intro { margin: -4px 0 14px; color: var(--text-secondary); font-size: 12.5px; line-height: 1.5; }
+    .cloud-login-dismiss { width: 28px; height: 28px; flex: 0 0 28px; }
+    .cloud-login-form { display: grid; gap: 11px; }
+    .cloud-login-field { display: grid; gap: 5px; min-width: 0; }
+    .cloud-login-field label { font-size: 12px; font-weight: 600; color: #525661; }
     .cloud-login-field .soft-input {
-      min-height: 50px; padding: 11px 13px; font-size: 16px;
-      background: #FFF; border-color: #D8DDE5; caret-color: #28486D;
+      min-height: 42px; padding: 9px 12px; font-size: 13.5px;
+      background: #FFFFFF; border-color: #E2E4EA; border-radius: 12px; caret-color: var(--ink-accent);
     }
-    .cloud-login-field .soft-input:focus { border-color: #3B76B8; outline: 2px solid #B4CDE7; outline-offset: 1px; }
+    .cloud-login-field .soft-input:focus { border-color: var(--ink-accent); }
     .cloud-login-password { position: relative; }
-    .cloud-login-password .soft-input { padding-right: 64px; }
+    .cloud-login-password .soft-input { padding-right: 54px; }
     .cloud-login-reveal {
-      position: absolute; top: 3px; right: 4px; height: 44px; min-width: 54px;
-      border: 0; border-radius: 8px; background: transparent; color: #31577D;
-      font: inherit; font-size: 13px; cursor: pointer;
+      position: absolute; top: 50%; right: 6px; transform: translateY(-50%);
+      height: 30px; min-width: 44px; border: 0; border-radius: 8px; background: transparent;
+      color: var(--ink-accent); font: inherit; font-size: 12px; font-weight: 600; cursor: pointer;
     }
-    .primary-btn.cloud-login-submit { min-height: 50px; margin: 3px 0 0; background: #243D59; border-radius: 12px; }
-    .cloud-login-submit:hover { background: #182D44; }
-    .cloud-login-submit:disabled { cursor: wait; opacity: .68; }
-    .cloud-login-note { text-align: center; font-size: 13px; line-height: 1.5; color: #555C69; margin-top: 13px; }
-    .cloud-login-feedback { font-size: 13px; line-height: 1.45; color: #90413E; }
-    .cloud-login-feedback:not(:empty) { margin: 11px 0 0; }
-    .cloud-login button:focus-visible { outline: 2px solid #366B9E; outline-offset: 3px; }
+    .primary-btn.cloud-login-submit { min-height: 44px; margin: 4px 0 0; background: var(--text-primary); border-radius: 13px; font-size: 14px; }
+    .cloud-login-submit:disabled { cursor: wait; opacity: .65; }
+    .cloud-login-note { text-align: center; font-size: 11.5px; line-height: 1.45; color: var(--text-secondary); margin-top: 10px; }
+    .cloud-login-feedback { font-size: 12px; line-height: 1.45; color: #A85757; }
+    .cloud-login-feedback:not(:empty) { margin: 10px 0 0; }
 
-    .cloud-account .cloud-login-head { align-items: center; }
+    .cloud-profile-card {
+      display: flex; align-items: center; gap: 12px;
+      background: #FFFFFF; border: 1px solid var(--border-hairline); border-radius: 16px;
+      padding: 13px 14px; margin-bottom: 12px; box-shadow: var(--shadow-card);
+    }
+    .cloud-avatar {
+      width: 40px; height: 40px; border-radius: 13px; flex-shrink: 0;
+      background: var(--ink-accent-soft); color: var(--ink-accent);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; font-weight: 700; text-transform: uppercase;
+    }
+    .cloud-profile-main { flex: 1; min-width: 0; }
     .cloud-account-identity {
-      margin: 12px 0 23px; color: #555C69; font-size: 15px; line-height: 1.5; overflow-wrap: anywhere;
+      margin: 0; color: var(--text-primary); font-size: 14.5px; font-weight: 700;
+      line-height: 1.35; overflow-wrap: anywhere;
     }
-    .cloud-account-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+    .cloud-account-status {
+      display: inline-flex; align-items: center; gap: 5px; margin-top: 3px;
+      font-size: 11.5px; color: var(--text-secondary);
+    }
+    .cloud-status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--ink-sage); }
+    .cloud-status-dot.warn { background: #E2A445; }
+    .cloud-account-notice {
+      margin: 0 0 12px; padding: 10px 12px; border-radius: 12px;
+      background: #FDF6EA; color: #8A6220; font-size: 12px; line-height: 1.5;
+    }
+    .cloud-account-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     .cloud-account-actions button {
-      min-height: 44px; padding: 10px 16px; border-radius: 10px;
-      font-size: 14px; font-weight: 600; cursor: pointer;
+      min-height: 42px; padding: 9px 12px; border-radius: 12px;
+      font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;
     }
-    .cloud-account-actions .cloud-account-change { background: #243D59; border: 1px solid #243D59; color: #FFF; }
-    .cloud-account-actions .cloud-account-secondary { background: transparent; border: 1px solid #D8DDE5; color: #414A59; }
-    .cloud-account-notice { margin: 0 0 14px; color: #555C69; font-size: 14px; line-height: 1.5; }
-    .cloud-account .cloud-login-feedback[data-success="true"] { color: #28634F; }
-    .cloud-password-panel .cloud-login-intro { margin-bottom: 18px; }
-    .cloud-password-panel .cloud-login-form { gap: 12px; }
+    .cloud-account-actions .cloud-account-change { background: var(--text-primary); border: 1px solid var(--text-primary); color: #FFFFFF; }
+    .cloud-account-actions .cloud-account-secondary { background: #FFFFFF; border: 1px solid var(--border-soft); color: #4A4E59; }
+    .cloud-account-actions .cloud-account-full { grid-column: span 2; }
+    .cloud-account-actions .cloud-account-danger { color: #A85757; border-color: rgba(168, 87, 87, 0.22); background: rgba(168, 87, 87, 0.04); }
+    .cloud-account .cloud-login-feedback[data-success="true"] { color: #2E7D60; }
+    .cloud-password-panel .cloud-login-intro { margin-bottom: 12px; }
+    .cloud-password-panel .cloud-login-form { gap: 10px; }
     @media (prefers-reduced-motion: reduce) {
       .sheet-panel:has(.cloud-login), .sheet-backdrop:has(.cloud-login) { transition: none; }
     }
@@ -1043,6 +1065,9 @@
         localRecords.moments.length || localRecords.weekSummaries.length || localRecords.monthLinks.length ||
         localRecords.monthTraces.length || localRecords.months.some(row => row.mind.length || row.action.length || row.result.length || row.note)
       );
+      const displayName = account?.email ? account.email.replace(READING_ACCOUNT_SUFFIX, '') : '';
+      const avatarChar = (displayName[0] || '云').toUpperCase();
+      const statusText = conflict ? '有跨设备冲突待核对' : (!ready || changedSinceSync()) ? '待同步到云端' : '已与云端同步';
       openSheet(`
         ${account ? `
           <section class="cloud-login cloud-account" role="dialog" aria-modal="true" aria-labelledby="cloudLoginTitle">
@@ -1050,14 +1075,23 @@
               <h2 class="cloud-login-title" id="cloudLoginTitle" tabindex="-1">云端账号</h2>
               <button type="button" class="sheet-close cloud-login-dismiss" id="closeSheetBtn" aria-label="关闭">✕</button>
             </div>
-            <p class="cloud-account-identity">${escapeHtml(account.email?.replace(READING_ACCOUNT_SUFFIX, ''))}</p>
+            <div class="cloud-profile-card">
+              <div class="cloud-avatar">${escapeHtml(avatarChar)}</div>
+              <div class="cloud-profile-main">
+                <p class="cloud-account-identity">${escapeHtml(displayName)}</p>
+                <div class="cloud-account-status">
+                  <span class="cloud-status-dot ${conflict || !ready || changedSinceSync() ? 'warn' : ''}"></span>
+                  <span>${statusText}</span>
+                </div>
+              </div>
+            </div>
             ${conflict ? '<p class="cloud-account-notice">其他设备已修改云端记录。本设备的修改已保留，可下载后核对。</p>' : ''}
             <div class="cloud-account-actions">
               <button type="button" class="cloud-account-change" id="changeCloudPassword">修改密码</button>
-              ${conflict ? '<button class="cloud-account-secondary" id="exportCloudDraft">下载本设备修改</button><button class="cloud-account-secondary" id="readLatestCloud">读取云端版本</button>' : ''}
-              ${!conflict && (!ready || changedSinceSync()) ? '<button class="cloud-account-secondary" id="retryCloud">重试同步</button>' : ''}
-              ${canImport ? '<button class="cloud-account-secondary" id="importLocalRecords">导入此浏览器的记录</button>' : ''}
-              <button type="button" class="cloud-account-secondary" id="signOutCloud">退出登录</button>
+              <button type="button" class="cloud-account-secondary cloud-account-danger" id="signOutCloud">退出登录</button>
+              ${conflict ? '<button type="button" class="cloud-account-secondary" id="exportCloudDraft">下载本设备修改</button><button type="button" class="cloud-account-secondary" id="readLatestCloud">读取云端版本</button>' : ''}
+              ${!conflict && (!ready || changedSinceSync()) ? '<button type="button" class="cloud-account-secondary cloud-account-full" id="retryCloud">重试同步</button>' : ''}
+              ${canImport ? '<button type="button" class="cloud-account-secondary cloud-account-full" id="importLocalRecords">导入此浏览器的记录</button>' : ''}
             </div>
             <p class="cloud-login-feedback" id="cloudFeedback" role="status">${typeof message === 'string' ? escapeHtml(message) : ''}</p>
           </section>
