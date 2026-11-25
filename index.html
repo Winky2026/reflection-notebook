@@ -726,6 +726,7 @@
             <h1 class="page-title">月度总表</h1>
             <button class="pill-action" id="toggleMonthLinkBtn">连线</button>
           </div>
+          <button type="button" class="pill-action" id="monthSourcesBtn" style="margin-bottom:10px;">回看本月日记和周记</button>
           <div class="trace-scroll" id="traceFilterBar"></div>
           <div class="month-toolbar">
             <span id="monthHint"></span>
@@ -2245,6 +2246,37 @@
       return Array.from(weekMap.values()).sort((a, b) => b.key.localeCompare(a.key));
     }
 
+    function openMonthSourcesSheet() {
+      const selectedMonth = parseIso(state.selectedDay || todayIso()).getMonth() + 1;
+      openSheet(`
+        <div class="sheet-title">${selectedMonth}月日记和周记</div>
+        <label>选择月份 <select id="sourceMonth">${Array.from({length: 12}, (_, i) =>
+          `<option value="${i + 1}" ${i + 1 === selectedMonth ? 'selected' : ''}>${i + 1}月</option>`).join('')}</select></label>
+        <div id="monthSourceList"></div>
+        <button type="button" class="primary-btn" id="closeMonthSourcesBtn">返回月度总表</button>
+      `);
+      const monthPicker = document.getElementById('sourceMonth');
+      const renderSources = () => {
+        const weeks = getWeeksContentForMonth(Number(monthPicker.value));
+        const list = weeks.map(week => `<details class="ref-item">
+          <summary class="ref-item-tag" style="cursor:pointer;min-height:44px;align-content:center;">${escapeHtml(week.label)} · ${week.summaries.length} 条周总结 · ${week.moments.length} 条日记</summary>
+          ${week.summaries.map(item => `<p style="white-space:pre-wrap;"><strong>周总结 · ${escapeHtml(item.title)}</strong><br>${escapeHtml(item.body)}</p>`).join('')}
+          ${week.moments.map(item => `<p style="white-space:pre-wrap;"><strong>${escapeHtml(formatShortMd(item.dayId))} · 日记</strong><br>${escapeHtml(item.event)}</p>`).join('')}
+        </details>`).join('');
+        document.getElementById('monthSourceList').innerHTML = list || '<p>该月暂无日记或周总结。</p>';
+      };
+      monthPicker.onchange = () => {
+        sheetBody.querySelector('.sheet-title').textContent = `${monthPicker.value}月日记和周记`;
+        renderSources();
+      };
+      document.getElementById('closeMonthSourcesBtn').onclick = () => {
+        closeSheet();
+        document.getElementById('monthSourcesBtn').focus();
+      };
+      renderSources();
+      monthPicker.focus();
+    }
+
     function openMonthCellSheet(cid) {
       const [mStr, col] = cid.split('-'), mNum = Number(mStr);
       const row = state.months.find(r => r.m === mNum);
@@ -2538,6 +2570,7 @@
       renderMonthly();
     };
     document.getElementById('monthLinkListBtn').onclick = openMonthLinkList;
+    document.getElementById('monthSourcesBtn').onclick = openMonthSourcesSheet;
     document.getElementById('fabBtn').onclick = () => openQuickRecordSheet();
     document.getElementById('quickAddBtn').onclick = () => openQuickRecordSheet();
     document.getElementById('openCalendarBtn').onclick = () => openCalendarSheet('daily');
