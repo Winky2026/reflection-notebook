@@ -2508,12 +2508,16 @@
     sheetBackdrop.addEventListener('click', e => { if (e.target === sheetBackdrop) closeSheet(); });
 
     function openQuickRecordSheet(presetTech = null) {
+      const recordDay = state.selectedDay;
+      const day = parseIso(recordDay);
+      const dateLabel = `${day.getFullYear()}年${day.getMonth() + 1}月${day.getDate()}日`;
       let picked = 'flow';
       openSheet(`
         <div class="sheet-head">
           <div class="sheet-title">${presetTech ? presetTech.name : '记一笔'}</div>
           <button class="sheet-close" id="closeSheetBtn">✕</button>
         </div>
+        <p class="quiet-note">记录日期 <time datetime="${recordDay}">${dateLabel}</time></p>
         ${presetTech ? `<p class="quiet-note">${escapeHtml(presetTech.prompt)}</p>` : ''}
         <div class="mood-grid" id="mp">${Object.entries(MOODS).map(([k, v]) => `<button class="mood-item ${k === picked ? 'selected' : ''}" data-mood="${k}"><span>${v.icon}</span><span>${v.label}</span></button>`).join('')}</div>
         <p id="phNote" class="quiet-note" style="display:none;">哲学模式：只客观记下“这件事发生了”，不必苛责自己。</p>
@@ -2533,14 +2537,15 @@
         const ev = document.getElementById('rEv').value.trim();
         if (!ev) return showToast('请先写下事件');
         state.moments.unshift({
-          id: 'm_' + Date.now(), dayId: state.selectedDay, time: '刚刚', mood: picked,
+          id: 'm_' + Date.now(), dayId: recordDay, time: '刚刚', mood: picked,
           event: ev, pastThought: document.getElementById('rFl').value.trim(),
           pastAction: '', pastResult: '', reframeThought: '', nextAction: '', expectedResult: '', focused: false
         });
+        state.selectedDay = recordDay;
         saveState(); closeSheet();
-        const cnt = state.moments.filter(m => m.dayId === state.selectedDay).length;
+        const cnt = state.moments.filter(m => m.dayId === recordDay).length;
         switchTab('daily');
-        showToast(cnt === 3 ? '今日已满 3 件' : '已保存');
+        showToast(cnt === 3 && recordDay === todayIso() ? '今日已满 3 件' : '已保存');
       };
     }
 
